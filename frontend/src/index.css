@@ -1,0 +1,63 @@
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Prata&display=swap");
+@import url("https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.8.1/font/bootstrap-icons.min.css");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  font-family: Outfit, sans-serif;
+}
+
+/* Font Styling */
+.prata-regular {
+  font-family: "Prata", serif;
+  font-weight: 400;
+  font-style: normal;
+  color: #ff4500; /* Adding a bold color for contrast */
+}
+
+/* Active Link Styling */
+a.active hr {
+  display: block;
+  background-color: white;
+}
+
+/* Remove Scrollbar */
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* Mobile-Specific Styles */
+@media (max-width: 640px) {
+  a.active {
+    background-color: black;
+    color: white;
+  }
+}
+
+/* Button and Link Styles */
+button,
+a {
+  border-radius: 12px; /* Rounded corners */
+  padding: 10px 20px; /* Padding for better spacing */
+  transition: all 0.3s ease; /* Smooth transition for hover effects */
+  transform: scale(1); /* Ensure no initial scaling */
+  box-shadow: none; /* Remove initial shadow */
+}
+
+/* Hover Effects */
+button:hover,
+a:hover {
+  transform: scale(1.05); /* Slight scale up on hover */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Soft shadow on hover */
+  background-color: rgba(255, 69, 0, 0.1); /* Subtle background change */
+}
+
+/* Reset Scaling for Active State */
+button:active,
+a:active {
+  transform: scale(1); /* Prevent excessive scaling on click */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Softer shadow on click */
+}
