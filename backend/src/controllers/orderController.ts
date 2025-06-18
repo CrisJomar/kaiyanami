@@ -151,7 +151,7 @@ export const createOrder = async (req: Request, res: Response) => {
     // Create the order with Prisma
     const order = await prisma.order.create({
       data: {
-        userId,
+        userId: userId as string, // Cast to string
         status: 'pending',
         shippingAddress,
         billingAddress,
