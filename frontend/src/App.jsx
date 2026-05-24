@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { Routes, Route, Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/ShoppingCartContext';
+import { ShopProvider } from './context/ShopContext';
 
 import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
@@ -130,6 +131,7 @@ const App = () => {
   return (
       <AuthProvider>
         <CartProvider>
+          <ShopProvider>
           <div className="App">
             <Routes>
               <Route path="/" element={<Layout />}>
@@ -208,6 +210,7 @@ const App = () => {
             </Routes>
             
           </div>
+          </ShopProvider>
         </CartProvider>
       </AuthProvider>
   );
