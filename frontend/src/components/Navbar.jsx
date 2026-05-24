@@ -126,18 +126,6 @@ const Navbar = () => {
     }, 500); // Increased delay to 500ms for more time to interact
   };
 
-  // Debug effect to log user state
-  useEffect(() => {
-    if (isAuthenticated) {
-      console.log('User state:', currentUser);
-      console.log('Verification conditions:', {
-        provider: currentUser?.provider,
-        isVerified: currentUser?.isVerified,
-        emailVerified: currentUser?.emailVerified,
-        showButton: currentUser?.provider === 'local' && !currentUser?.isVerified
-      });
-    }
-  }, [currentUser, isAuthenticated]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -259,24 +247,7 @@ const Navbar = () => {
                         Hello, {currentUser?.firstName || currentUser?.email?.split('@')[0] || 'User'}
                       </div>
 
-                      {/* Always visible debug button when logged in */}
-                      {isAuthenticated && (
-                        <button
-                          onClick={() => {
-                            console.log('Debug - User state:', currentUser);
-                            sendVerificationEmail();
-                            toggleDropdown('user');
-                          }}
-                          className="block w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 hover:text-blue-700 border-b border-gray-200"
-                        >
-                          <div className="flex items-center">
-                            <FaCheckCircle className="mr-2" />
-                             Send Verification
-                          </div>
-                        </button>
-                      )}
-
-                      {/* Original verification button - which should appear conditionally */}
+                      {/* Show "Verify Email" only for local (non-OAuth) unverified users */}
                       {currentUser?.provider === 'local' && !(currentUser?.isVerified || currentUser?.emailVerified) && (
                         <button
                           onClick={() => {
