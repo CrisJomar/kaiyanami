@@ -2,9 +2,6 @@ import { logger } from '../lib/logger';
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
 
-
-export default prisma;
-
 // Get addresses for a specific user
 export const getUserAddresses = async (req: Request, res: Response) => {
   try {
@@ -32,3 +29,5 @@ export const getUserAddresses = async (req: Request, res: Response) => {
 };
 
 // Add other user-related controller functions here
+
+export default { getUserAddresses };

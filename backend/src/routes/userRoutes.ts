@@ -2,83 +2,37 @@ import { logger } from '../lib/logger';
 import express from 'express';
 import prisma from '../lib/prisma';
 import { Request, Response } from 'express';
-import { auth, verifyToken, optionalAuth, isAdmin, authorize } from '../utils/middlewareHelpers';
+import { auth, verifyToken, authorize } from '../utils/middlewareHelpers';
 
 // req.user is typed globally via Express.User in authMiddleware.ts
 
 const router = express.Router();
 
-// Get user addresses endpoint
+// ── GET /api/users/:userId/addresses ──────────────────────────────────────────
+// Users can only fetch their own addresses; admins can fetch anyone's.
 router.get('/:userId/addresses', authorize(['user', 'admin']), async (req: Request, res: Response): Promise<void> => {
   try {
     const { userId } = req.params;
-    
-    
-    // Print headers and origin for debugging
-    logger.info('Request details:', {
-      origin: req.headers.origin,
-      referer: req.headers.referer,
-      path: req.path,
-      userId: userId
-    });
-    
-    // Log the user object for debugging
-    logger.info('User from token:', JSON.stringify(req.user, null, 2));
-    
-    // Security check: Users can only access their own addresses unless they're admins
+
     if (!req.user) {
       res.status(401).json({ error: 'Authentication required' });
       return;
     }
-    
-    // Enhanced admin detection - check all possible ways admin status might be stored
-    const isAdmin = 
-      req.user.isAdmin === true || 
-      req.user.role === 'admin' ||
-      req.user.userType === 'admin' ||
-      (req.user.roles && Array.isArray(req.user.roles) && req.user.roles.includes('admin'));
-    
-    // Print detailed user info for debugging
-    logger.info('Authorization check:', {
-      endpoint: 'Get user addresses',
-      requestedUserId: userId,
-      currentUserId: req.user.id,
-      userObject: req.user,
-      isAdminDetected: isAdmin
-    });
-    
-    // Check if the request is coming from the admin panel
-    const referer = req.headers.referer || '';
-    const isFromAdminPanel = referer.includes('/admin/') || referer.includes('admin-dashboard');
-    
-    if (req.user.id !== userId && !isAdmin && !isFromAdminPanel) {
-      logger.info('Access denied:', {
-        requestedUserId: userId,
-        currentUserId: req.user.id,
-        isAdmin: isAdmin,
-        referer: referer
-      });
+
+    const userIsAdmin = req.user.role === 'admin';
+
+    if (req.user.id !== userId && !userIsAdmin) {
       res.status(403).json({ error: 'Not authorized to access these addresses' });
       return;
     }
-    
-    // Look up user to ensure they exist
-    const user = await prisma.user.findUnique({
-      where: { id: userId }
-    });
-    
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
       res.status(404).json({ error: 'User not found' });
       return;
     }
-    
-    // Fetch addresses for this user
-    const addresses = await prisma.address.findMany({
-      where: { userId }
-    });
-    
-    // Send back the addresses
-    logger.info(`Found ${addresses.length} addresses for user ${userId}`);
+
+    const addresses = await prisma.address.findMany({ where: { userId } });
     res.json(addresses);
   } catch (error) {
     logger.error('Error fetching user addresses:', error);
@@ -86,81 +40,16 @@ router.get('/:userId/addresses', authorize(['user', 'admin']), async (req: Reque
   }
 });
 
-// Admin route to get addresses for any user
-router.get('/admin/get-addresses/:userId', authorize(['admin']), async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { userId } = req.params;
-    
-    // Print full request info for debugging
-    logger.info('DEBUG - Admin address request:', {
-      userId,
-      requestUser: req.user,
-      headers: req.headers
-    });
-    
-    // Fetch addresses directly without permission checks
-    const addresses = await prisma.address.findMany({
-      where: { userId }
-    });
-    
-    logger.info(`Admin endpoint: Found ${addresses.length} addresses for user ${userId}`);
-    res.json(addresses);
-  } catch (error) {
-    logger.error('Error in admin address endpoint:', error);
-    res.status(500).json({ error: 'Failed to fetch addresses' });
-  }
-});
-
-
-// This is specifically for admin panel access to user addresses
-router.get('/admin-access/:userId/addresses', verifyToken, async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { userId } = req.params;
-    
-    // Log debug info
-    logger.info('Admin access route:', {
-      requestUser: req.user?.email,
-      requestedUserId: userId
-    });
-    
-  
-    // Check if user exists
-    const user = await prisma.user.findUnique({
-      where: { id: userId }
-    });
-    
-    if (!user) {
-      res.status(404).json({ error: 'User not found' });
-      return;
-    }
-    
-    // Fetch addresses for this user
-    const addresses = await prisma.address.findMany({
-      where: { userId }
-    });
-    
-    logger.info(`Admin access: Found ${addresses.length} addresses for user ${userId}`);
-    res.json(addresses);
-  } catch (error) {
-    logger.error('Error in admin address access:', error);
-    res.status(500).json({ error: 'Failed to fetch addresses' });
-  }
-});
-
-
-// Get current user's profile for forms
+// ── GET /api/users/profile ────────────────────────────────────────────────────
 router.get('/profile', verifyToken, async (req: Request, res: Response) => {
   try {
-    // Safely cast req to AuthRequest
-    const user = (req as any).user;
-    
-    if (!user) {
-      res.status(401).json({ message: "Not authenticated" });
+    if (!req.user) {
+      res.status(401).json({ message: 'Not authenticated' });
       return;
     }
-    
+
     const userProfile = await prisma.user.findUnique({
-      where: { id: user.id },
+      where: { id: req.user.id },
       select: {
         id: true,
         email: true,
@@ -168,40 +57,37 @@ router.get('/profile', verifyToken, async (req: Request, res: Response) => {
         lastName: true,
         addresses: {
           where: { isDefault: true },
-          take: 1
-        }
-      }
+          take: 1,
+        },
+      },
     });
-    
+
     if (!userProfile) {
-      res.status(404).json({ message: "User profile not found" });
+      res.status(404).json({ message: 'User profile not found' });
       return;
     }
-    
-    // Format response with default address if available
+
     const defaultAddress = userProfile.addresses[0];
-    
+
     res.json({
       id: userProfile.id,
       email: userProfile.email,
       firstName: userProfile.firstName || '',
       lastName: userProfile.lastName || '',
-      address: defaultAddress ? {
-        street: defaultAddress.street,
-        city: defaultAddress.city,
-        state: defaultAddress.state,
-        zipCode: defaultAddress.zipCode,
-        country: defaultAddress.country
-      } : null
+      address: defaultAddress
+        ? {
+            street: defaultAddress.street,
+            city: defaultAddress.city,
+            state: defaultAddress.state,
+            zipCode: defaultAddress.zipCode,
+            country: defaultAddress.country,
+          }
+        : null,
     });
   } catch (error) {
-    logger.error("Error fetching user profile:", error);
-    res.status(500).json({ message: "Server error" });
+    logger.error('Error fetching user profile:', error);
+    res.status(500).json({ message: 'Server error' });
   }
-});
-
-router.get('/protected-route', auth, (req, res) => {
-  // Your handler code
 });
 
 export default router;

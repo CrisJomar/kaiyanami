@@ -1,39 +1,30 @@
 import { Router } from 'express';
 import { Request, Response, NextFunction } from 'express';
-import authMiddleware from '../middleware/authMiddleware';
 import * as CartController from '../controllers/cartController';
-import { auth, verifyToken, optionalAuth, isAdmin, authorize } from '../utils/middlewareHelpers';
+import { auth } from '../utils/middlewareHelpers';
 
 const router = Router();
 
-// Helper function for async request handlers
 const asyncHandler = (fn: Function) => (req: Request, res: Response, next: NextFunction) => {
   Promise.resolve(fn(req, res)).catch(next);
 };
 
-// Add type assertion to bypass TypeScript's strict checking
-const typedMiddleware = authMiddleware as any;
+// GET  /api/cart            — fetch current user's cart
+router.get('/',                       auth, asyncHandler(CartController.getCart));
 
-// Get user's cart
-router.get('/', typedMiddleware, asyncHandler(CartController.getCart));
+// POST /api/cart/add        — add an item (or increment qty if already in cart)
+router.post('/add',                   auth, asyncHandler(CartController.addToCart));
 
-// Add item to cart
-router.post('/items', typedMiddleware, asyncHandler(CartController.addItem));
+// PUT  /api/cart/update/:cartItemId  — set a new quantity on one cart item
+router.put('/update/:cartItemId',     auth, asyncHandler(CartController.updateCartItem));
 
-// Update cart item quantity
-router.put('/items/:itemId', typedMiddleware, asyncHandler(CartController.updateItemQuantity));
+// DELETE /api/cart/remove/:cartItemId — remove one item from the cart
+router.delete('/remove/:cartItemId',  auth, asyncHandler(CartController.removeCartItem));
 
-// Remove item from cart
-router.delete('/items/:itemId', typedMiddleware, asyncHandler(CartController.removeItem));
+// DELETE /api/cart/clear    — empty the whole cart
+router.delete('/clear',               auth, asyncHandler(CartController.clearCart));
 
-// Clear cart
-router.delete('/', typedMiddleware, asyncHandler(CartController.clearCart));
-
-// Protected route
-router.get('/protected-route', auth, (req, res) => {
-  // Your handler code
-});
-
-
+// POST /api/cart/migrate    — merge anonymous (local-storage) cart into DB cart on login
+router.post('/migrate',               auth, asyncHandler(CartController.migrateAnonymousCart));
 
 export default router;
