@@ -24,7 +24,7 @@ const ProductReviews = ({ productId }) => {
   const fetchReviews = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`http://localhost:5001/api/reviews/product/${productId}`);
+      const response = await axios.get(`/api/reviews/product/${productId}`);
       setReviews(response.data.reviews);
       setAverageRating(response.data.average);
       setTotalReviews(response.data.total);
@@ -51,7 +51,7 @@ const ProductReviews = ({ productId }) => {
   const getUserFromToken = async (token) => {
     try {
       // Try to get user from /api/auth/me
-      const response = await axios.get('http://localhost:5001/api/auth/me', {
+      const response = await axios.get('/api/auth/me', {
         headers: { Authorization: `Bearer ${token}` }
       });
       return response.data;
@@ -96,7 +96,7 @@ const ProductReviews = ({ productId }) => {
     
     try {
       const response = await axios.post(
-        `http://localhost:5001/api/reviews/product/${productId}`,
+        `/api/reviews/product/${productId}`,
         newReview,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -128,7 +128,7 @@ const ProductReviews = ({ productId }) => {
     const token = localStorage.getItem('token');
     
     try {
-      await axios.delete(`http://localhost:5001/api/reviews/${reviewId}`, {
+      await axios.delete(`/api/reviews/${reviewId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       

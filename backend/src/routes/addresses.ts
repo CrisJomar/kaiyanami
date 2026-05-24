@@ -1,6 +1,7 @@
+import { logger } from '../lib/logger';
 import express from 'express';
 import { auth, verifyToken, optionalAuth, isAdmin, authorize } from '../utils/middlewareHelpers';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma';
 
 import { Request, Response, NextFunction } from 'express';
 import { 
@@ -12,7 +13,6 @@ import {
 } from '../controllers/addressController';
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // Helper function for async handlers
 const asyncHandler = (fn: Function) => (req: Request, res: Response, next: NextFunction) => {
@@ -33,7 +33,7 @@ router.get('/', verifyToken, asyncHandler(async (req: any, res: any) => {
     
     res.status(200).json(addresses);
   } catch (error) {
-    console.error('Error fetching addresses:', error);
+    logger.error('Error fetching addresses:', error);
     res.status(500).json({ message: 'Failed to fetch addresses' });
   }
 }));
@@ -88,7 +88,7 @@ router.post('/', verifyToken, asyncHandler(async (req: any, res: any) => {
     
     res.status(201).json(newAddress);
   } catch (error) {
-    console.error('Error creating address:', error);
+    logger.error('Error creating address:', error);
     res.status(500).json({ message: 'Failed to create address' });
   }
 }));
@@ -148,7 +148,7 @@ router.put('/:id', verifyToken, asyncHandler(async (req: any, res: any) => {
     
     res.status(200).json(updatedAddress);
   } catch (error) {
-    console.error('Error updating address:', error);
+    logger.error('Error updating address:', error);
     res.status(500).json({ message: 'Failed to update address' });
   }
 }));
@@ -190,7 +190,7 @@ router.delete('/:id', verifyToken, asyncHandler(async (req: any, res: any) => {
     
     res.status(200).json({ message: 'Address deleted successfully' });
   } catch (error) {
-    console.error('Error deleting address:', error);
+    logger.error('Error deleting address:', error);
     res.status(500).json({ message: 'Failed to delete address' });
   }
 }));
@@ -227,7 +227,7 @@ router.put('/:id/default', verifyToken, asyncHandler(async (req: any, res: any) 
     
     res.status(200).json(updatedAddress);
   } catch (error) {
-    console.error('Error setting default address:', error);
+    logger.error('Error setting default address:', error);
     res.status(500).json({ message: 'Failed to set default address' });
   }
 }));

@@ -108,7 +108,7 @@ const ProductManagement = () => {
       
       // Use the correct endpoint that matches your backend route definition
       const productsResponse = await axios.get(
-        `http://localhost:5001/api/products/admin?${queryParams.toString()}`, 
+        `/api/products/admin?${queryParams.toString()}`, 
         {
           headers: { Authorization: `Bearer ${token}` }
         }
@@ -147,7 +147,7 @@ const ProductManagement = () => {
       }
 
       // Use the correct endpoint that matches your backend route definition
-      const categoriesResponse = await axios.get('http://localhost:5001/api/categories', {
+      const categoriesResponse = await axios.get('/api/categories', {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -288,7 +288,7 @@ const handleAddProduct = async () => {
     console.log("Prepared product data:", JSON.stringify(productData, null, 2));
 
     const response = await axios.post(
-      'http://localhost:5001/api/products', 
+      '/api/products', 
       productData, 
       {
         headers: {
@@ -377,7 +377,7 @@ const handleUpdateProduct = async () => {
     console.log("Prepared product data for update:", JSON.stringify(productData, null, 2));
     
     const response = await axios.put(
-      `http://localhost:5001/api/products/${currentProductId}`, 
+      `/api/products/${currentProductId}`, 
       productData, 
       {
         headers: {
@@ -437,7 +437,7 @@ const handleUpdateProduct = async () => {
       
       // Use the correct endpoint that matches your backend route definition
       await axios.delete(
-        `http://localhost:5001/api/products/${productId}`, 
+        `/api/products/${productId}`, 
         {
           headers: {
             Authorization: `Bearer ${token}`
@@ -483,7 +483,7 @@ const handleUpdateProduct = async () => {
       console.log("Creating category:", categoryFormData.name);
       
       const response = await axios.post(
-        'http://localhost:5001/api/categories',
+        '/api/categories',
         { name: categoryFormData.name },
         {
           headers: {
@@ -541,7 +541,7 @@ const handleUpdateProduct = async () => {
       
       // IMPORTANT: Use the correct URL path - match what your backend expects
       const response = await axios.put(
-        `http://localhost:5001/api/categories/${encodeURIComponent(editingCategory)}`, 
+        `/api/categories/${encodeURIComponent(editingCategory)}`, 
         { name: categoryFormData.name },
         config
       );
@@ -592,7 +592,7 @@ const handleUpdateProduct = async () => {
         
         // IMPORTANT: Use the correct URL path
         await axios.delete(
-          `http://localhost:5001/api/categories/${encodeURIComponent(categoryName)}`,
+          `/api/categories/${encodeURIComponent(categoryName)}`,
           config
         );
         
@@ -619,7 +619,7 @@ const handleUpdateProduct = async () => {
       formData.append('image', file);
       
       // Changed URL from /api/products/upload to /api/upload
-      const response = await axios.post('http://localhost:5001/api/upload', formData, {
+      const response = await axios.post('/api/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -681,7 +681,7 @@ const handleUpdateProduct = async () => {
         }
         
         await axios.post(
-          'http://localhost:5001/api/admin/products/bulk-delete', 
+          '/api/admin/products/bulk-delete', 
           { productIds: selectedProducts },
           {
             headers: {
@@ -714,7 +714,7 @@ const handleUpdateProduct = async () => {
         }
         
         await axios.post(
-          'http://localhost:5001/api/admin/products/bulk-update-stock', 
+          '/api/admin/products/bulk-update-stock', 
           { 
             productIds: selectedProducts,
             stock
@@ -801,7 +801,7 @@ const handleUpdateProduct = async () => {
       
       // IMPORTANT: Use the CORRECT endpoint
       const response = await axios.post(
-        'http://localhost:5001/api/categories',  // This matches your backend route
+        '/api/categories',  // This matches your backend route
         { name: newCategoryName.trim() },
         {
           headers: {

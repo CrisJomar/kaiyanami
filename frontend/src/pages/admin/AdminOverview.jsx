@@ -37,12 +37,12 @@ const AdminOverview = () => {
       }
       
       // Fetch dashboard stats
-      const statsResponse = await axios.get('http://localhost:5001/api/admin/stats', {
+      const statsResponse = await axios.get('/api/admin/stats', {
         headers: { Authorization: `Bearer ${token}` }
       });
       
       // Fetch recent orders (last 5)
-      const ordersResponse = await axios.get('http://localhost:5001/api/admin/orders?limit=5', {
+      const ordersResponse = await axios.get('/api/admin/orders?limit=5', {
         headers: { Authorization: `Bearer ${token}` }
       });
       

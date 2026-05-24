@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import axios from 'axios';
+import api from '../utils/axios';
 
 const AuthContext = createContext();
 
@@ -9,33 +9,24 @@ export const AuthProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
-  
+  // Validate token on mount and restore session
   useEffect(() => {
     const checkAuthStatus = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setIsLoading(false);
+        return;
+      }
+
       try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          setIsLoading(false);
-          return;
-        }
-
-        const response = await axios.get('http://localhost:5001/api/auth/validate', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-
-        console.log('Auth validation response:', response.data);
-
-      
-        if (response.data && response.data.user) {
-          setUser(response.data.user);
+        const { data } = await api.get('/api/auth/validate');
+        if (data?.user) {
+          setUser(data.user);
           setIsAuthenticated(true);
-          console.log('User authenticated:', response.data.user.email);
         } else {
-          console.log('Invalid response from validation endpoint');
           localStorage.removeItem('token');
         }
-      } catch (err) {
-        console.error('Auth validation error:', err);
+      } catch {
         localStorage.removeItem('token');
       } finally {
         setIsLoading(false);
@@ -46,70 +37,48 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (email, password) => {
-    try {
-      setError('');
-      console.log(`Attempting login for: ${email}`);
-      
-      const response = await axios.post('http://localhost:5001/api/auth/login', {
-        email,
-        password
-      });
-      
-      console.log('Login response data:', response.data);
-      
-      if (!response.data || !response.data.token || !response.data.user) {
-        throw new Error('Invalid response format');
-      }
-      
-      const { token, user: userData } = response.data;
-      localStorage.setItem('token', token);
-      
-      setUser(userData);
-      setIsAuthenticated(true);
-      
-      return userData;
-    } catch (err) {
-      console.error('Login error:', err);
-      setError(err.response?.data?.message || 'Authentication failed');
-      throw err;
-    }
+    setError('');
+    const { data } = await api.post('/api/auth/login', { email, password });
+
+    if (!data?.token || !data?.user) throw new Error('Invalid response from server');
+
+    localStorage.setItem('token', data.token);
+    setUser(data.user);
+    setIsAuthenticated(true);
+    return data.user;
   };
 
   const register = async (userData) => {
-    try {
-      setError('');
-      const response = await axios.post('http://localhost:5001/api/auth/register', userData);
-      
-      const { token, user } = response.data;
-      localStorage.setItem('token', token);
-      setUser(user);
-      setIsAuthenticated(true);
-      
-      return user;
-    } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed');
-      throw err;
+    setError('');
+    const { data } = await api.post('/api/auth/register', userData);
+
+    if (data?.token) {
+      localStorage.setItem('token', data.token);
     }
+    if (data?.user) {
+      setUser(data.user);
+      setIsAuthenticated(true);
+    }
+    return data?.user;
   };
-  
+
   const logout = () => {
     localStorage.removeItem('token');
     setUser(null);
     setIsAuthenticated(false);
   };
 
-  
   const getUserDisplayName = () => {
     if (!user) return 'Guest';
     if (user.firstName && user.lastName) return `${user.firstName} ${user.lastName}`;
     if (user.firstName) return user.firstName;
-    return user.email.split('@')[0]; 
+    return user.email?.split('@')[0] ?? 'User';
   };
-  
+
   return (
     <AuthContext.Provider value={{
       user,
-      currentUser: user,  
+      currentUser: user,
       isAuthenticated,
       isLoading,
       error,
@@ -117,7 +86,7 @@ export const AuthProvider = ({ children }) => {
       register,
       logout,
       getUserDisplayName,
-      setError
+      setError,
     }}>
       {children}
     </AuthContext.Provider>

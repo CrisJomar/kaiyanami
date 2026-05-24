@@ -102,7 +102,7 @@ const persistCategories = (categoriesToSave) => {
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:5001/api/categories');
+      const response = await axios.get('/api/categories');
       
       if (Array.isArray(response.data)) {
         
@@ -185,14 +185,14 @@ const persistCategories = (categoriesToSave) => {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:5001/api/products/admin');
+      const response = await axios.get('/api/products/admin');
       
    
       const productsWithSizes = await Promise.all(
         response.data.products.map(async (product) => {
           if (product.hasSizes) {
             // Get full product details including sizes
-            const detailsResponse = await axios.get(`http://localhost:5001/api/products/${product.id}`);
+            const detailsResponse = await axios.get(`/api/products/${product.id}`);
             return detailsResponse.data;
           }
           return product;
@@ -236,7 +236,7 @@ const persistCategories = (categoriesToSave) => {
   const openEditModal = async (product) => {
     try {
      
-      const response = await axios.get(`http://localhost:5001/api/products/${product.id}`);
+      const response = await axios.get(`/api/products/${product.id}`);
       const fullProduct = response.data;
       
       console.log("Full product with sizes:", fullProduct);
@@ -306,7 +306,7 @@ const persistCategories = (categoriesToSave) => {
       if (currentProduct) {
         // Update existing product
         await axios.put(
-          `http://localhost:5001/api/products/${currentProduct.id}`, 
+          `/api/products/${currentProduct.id}`, 
           productData,
           config
         );
@@ -314,7 +314,7 @@ const persistCategories = (categoriesToSave) => {
       } else {
         // Create new product
         await axios.post(
-          'http://localhost:5001/api/products', 
+          '/api/products', 
           productData,
           config
         );
@@ -339,7 +339,7 @@ const persistCategories = (categoriesToSave) => {
           return;
         }
         
-        await axios.delete(`http://localhost:5001/api/products/${productId}`, {
+        await axios.delete(`/api/products/${productId}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -382,7 +382,7 @@ const persistCategories = (categoriesToSave) => {
       const token = localStorage.getItem('token');
       
       const response = await axios.post(
-        'http://localhost:5001/api/categories', 
+        '/api/categories', 
         { name: categoryFormData.name.trim() },
         { headers: { 'Authorization': `Bearer ${token}` } }
       );
@@ -435,7 +435,7 @@ const persistCategories = (categoriesToSave) => {
       console.log("Updating category from", editingCategory, "to", categoryFormData.name.trim());
       
       const response = await axios.put(
-        `http://localhost:5001/api/categories/${editingCategory}`, 
+        `/api/categories/${editingCategory}`, 
         { name: categoryFormData.name.trim() },
         { headers: { 'Authorization': `Bearer ${token}` } }
       );
@@ -499,7 +499,7 @@ const persistCategories = (categoriesToSave) => {
         console.log("Deleting category:", categoryName);
         
         await axios.delete(
-          `http://localhost:5001/api/categories/${categoryName}`, 
+          `/api/categories/${categoryName}`, 
           { headers: { 'Authorization': `Bearer ${token}` } }
         );
         
@@ -671,7 +671,7 @@ const persistCategories = (categoriesToSave) => {
       formData.append('image', file);
       
   
-      const response = await axios.post('http://localhost:5001/api/upload', formData, {
+      const response = await axios.post('/api/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           'Authorization': `Bearer ${localStorage.getItem('token')}`

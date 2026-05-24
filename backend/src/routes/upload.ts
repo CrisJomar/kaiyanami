@@ -1,3 +1,4 @@
+import { logger } from '../lib/logger';
 import express, { Request, Response, NextFunction } from 'express';
 import { auth, verifyToken, optionalAuth, isAdmin, authorize } from '../utils/middlewareHelpers';
 import multer from 'multer';
@@ -77,7 +78,7 @@ router.post('/', auth, upload.single('image'), (req: Request, res: Response, nex
     
     res.json({ url: fileUrl });
   } catch (error) {
-    console.error('Upload error:', error);
+    logger.error('Upload error:', error);
     res.status(500).json({ error: 'File upload failed' });
   }
 });

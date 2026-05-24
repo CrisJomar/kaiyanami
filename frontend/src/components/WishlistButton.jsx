@@ -16,7 +16,7 @@ const WishlistButton = ({ productId, size = 'md' }) => {
       if (!token) return;
 
       try {
-        const response = await axios.get('http://localhost:5001/api/wishlist', {
+        const response = await axios.get('/api/wishlist', {
           headers: { Authorization: `Bearer ${token}` }
         });
         
@@ -44,14 +44,14 @@ const WishlistButton = ({ productId, size = 'md' }) => {
     try {
       if (isInWishlist) {
         // Remove from wishlist
-        await axios.delete(`http://localhost:5001/api/wishlist/${productId}`, {
+        await axios.delete(`/api/wishlist/${productId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         toast.success('Removed from wishlist');
         setIsInWishlist(false);
       } else {
         // Add to wishlist
-        await axios.post(`http://localhost:5001/api/wishlist/${productId}`, {}, {
+        await axios.post(`/api/wishlist/${productId}`, {}, {
           headers: { Authorization: `Bearer ${token}` }
         });
         toast.success('Added to wishlist');

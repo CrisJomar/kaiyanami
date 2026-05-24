@@ -1,86 +1,90 @@
-import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
-import { PrismaClient } from '@prisma/client';
+import { Request, Response, NextFunction } from "express";
+import jwt from "jsonwebtoken";
+import prisma from "../lib/prisma";
+import { logger } from "../lib/logger";
 
-const prisma = new PrismaClient();
-
-// Extend Express's Request to include user
+// ── Augment Express.User (Passport-compatible) ────────────────────────────────
+// Passport already declares Express.Request.user as Express.User | undefined.
+// We extend Express.User so all middleware sees consistent fields.
 declare global {
   namespace Express {
-    interface Request {
-      user?: {
-        id: string;
-        email: string;
-        role?: string;
-        [key: string]: any;
-      };
+    interface User {
+      id: string;
+      email: string;
+      role: string;
     }
   }
 }
 
-export const authenticateToken = async (req: Request, res: Response, next: NextFunction) => {
+interface JwtPayload {
+  id: string;
+  email: string;
+  role: string;
+  iat?: number;
+  exp?: number;
+}
+
+/**
+ * Verifies the Bearer JWT and attaches the DB-fresh user to `req.user`.
+ * Rejects the request with 401/403 on failure.
+ */
+export const authenticateToken = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.startsWith("Bearer ")
+    ? authHeader.slice(7)
+    : null;
+
+  if (!token) {
+    res.status(401).json({ error: "Authentication token required" });
+    return;
+  }
+
   try {
-    const authHeader = req.headers.authorization;
-    const token = authHeader && authHeader.split(' ')[1];
-    
-    if (!token) {
-      return res.status(401).json({ error: 'Authentication token required' });
-    }
-
-    // Use a simple interface instead of the imported type
-    interface DecodedToken {
-      id: string;
-      email: string;
-      role?: string;
-      [key: string]: any;
-    }
-
-    // Verify the token with the inline type
     const decoded = jwt.verify(
-      token, 
-      process.env.JWT_SECRET || 'your-secret-key'
-    ) as DecodedToken;
-    
-    console.log("Token decoded:", decoded);
-    
-    // Fetch the full user data including role
+      token,
+      process.env.JWT_SECRET!
+    ) as JwtPayload;
+
+    // Always fetch a fresh copy so role changes take effect immediately
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
-      select: { id: true, email: true, role: true }
+      select: { id: true, email: true, role: true },
     });
-    
+
     if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      res.status(401).json({ error: "User not found" });
+      return;
     }
 
-    console.log("User found:", user);
-    
-    // Attach user to request
-    (req as any).user = user;
+    req.user = user;
     next();
-  } catch (error) {
-    console.error('Auth error:', error);
-    res.status(403).json({ error: 'Invalid or expired token' });
+  } catch (err) {
+    logger.warn("Invalid token", { error: (err as Error).message });
+    res.status(403).json({ error: "Invalid or expired token" });
   }
 };
 
-export const requireAdmin = (req: any, res: Response, next: NextFunction) => {
-  // Check that req.user exists and has the required fields
+/**
+ * Requires that the authenticated user has the 'admin' role.
+ * Must be used after `authenticateToken`.
+ */
+export const requireAdmin = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void => {
   if (!req.user) {
-    return res.status(401).json({ error: 'Authentication required' });
+    res.status(401).json({ error: "Authentication required" });
+    return;
   }
-  
-  // Debug what's in the token
-  console.log("Auth check - User data from token:", req.user);
-  
-  // IMPORTANT: Check both possibilities - userId OR id
-  const userRole = req.user.role;
-  
-  if (userRole !== 'admin') {
-    console.log(`Access denied: User role ${userRole} attempted admin access`);
-    return res.status(403).json({ error: 'Admin access required' });
+  if (req.user.role !== "admin") {
+    res.status(403).json({ error: "Admin access required" });
+    return;
   }
-  
   next();
 };
 

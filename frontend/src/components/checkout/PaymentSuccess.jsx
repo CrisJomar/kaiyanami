@@ -31,7 +31,7 @@ const PaymentSuccess = ({ orderId, items, customerInfo, clearCart }) => {
         console.log('SUCCESS COMPONENT: Sending email directly with items:', formattedItems);
         
        
-        await axios.post('http://localhost:5001/api/email/send-confirmation', {
+        await axios.post('/api/email/send-confirmation', {
           orderId,
           email: customerInfo?.email || 'crisjhernandez15@gmail.com',
           items: formattedItems,

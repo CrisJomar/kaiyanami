@@ -1,3 +1,4 @@
+import { logger } from '../lib/logger';
 import express from 'express';
 import { Request, Response } from 'express';
 import categoryController from '../controllers/categoryController';
@@ -9,7 +10,7 @@ const router = express.Router();
 router.get('/', (req: Request, res: Response) => {
   categoryController.getAllCategories(req, res)
     .catch(err => {
-      console.error('Error in GET /categories:', err);
+      logger.error('Error in GET /categories:', err);
       res.status(500).json({ error: 'Failed to retrieve categories' });
     });
 });
@@ -18,7 +19,7 @@ router.get('/', (req: Request, res: Response) => {
 router.get('/:id', (req: Request, res: Response) => {
   categoryController.getCategoryById(req, res)
     .catch(err => {
-      console.error('Error in GET /categories/:id:', err);
+      logger.error('Error in GET /categories/:id:', err);
       res.status(500).json({ error: 'Failed to retrieve category' });
     });
 });
@@ -30,12 +31,12 @@ router.post('/', auth, (req: Request, res: Response) => {
   if (categoryController.createCategory) {
     categoryController.createCategory(req, res)
       .catch(err => {
-        console.error('Error in POST /categories:', err);
+        logger.error('Error in POST /categories:', err);
         res.status(500).json({ error: 'Failed to create category' });
       });
   } else {
     // Fallback if the function doesn't exist
-    console.error('categoryController.createCategory is not defined');
+    logger.error('categoryController.createCategory is not defined');
     res.status(501).json({ error: 'Create category functionality not implemented' });
   }
 });
@@ -45,7 +46,7 @@ router.put('/:id', auth, (req: Request, res: Response) => {
   if (categoryController.updateCategory) {
     categoryController.updateCategory(req, res)
       .catch(err => {
-        console.error('Error in PUT /categories/:id:', err);
+        logger.error('Error in PUT /categories/:id:', err);
         res.status(500).json({ error: 'Failed to update category' });
       });
   } else {
@@ -58,7 +59,7 @@ router.delete('/:id', auth, (req: Request, res: Response) => {
   if (categoryController.deleteCategory) {
     categoryController.deleteCategory(req, res)
       .catch(err => {
-        console.error('Error in DELETE /categories/:id:', err);
+        logger.error('Error in DELETE /categories/:id:', err);
         res.status(500).json({ error: 'Failed to delete category' });
       });
   } else {

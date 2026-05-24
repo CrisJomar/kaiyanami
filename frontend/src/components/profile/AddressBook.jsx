@@ -36,7 +36,7 @@ const AddressBook = () => {
         return;
       }
       
-      const response = await axios.get('http://localhost:5001/api/addresses', {
+      const response = await axios.get('/api/addresses', {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -80,7 +80,7 @@ const AddressBook = () => {
     
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:5001/api/addresses/${id}`, {
+      await axios.delete(`/api/addresses/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -95,7 +95,7 @@ const AddressBook = () => {
   const handleSetDefault = async (id) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`http://localhost:5001/api/addresses/${id}/default`, {}, {
+      await axios.put(`/api/addresses/${id}/default`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -119,14 +119,14 @@ const AddressBook = () => {
       
       if (editingAddress) {
         // Update existing address
-        await axios.put(`http://localhost:5001/api/addresses/${editingAddress}`, formData, {
+        await axios.put(`/api/addresses/${editingAddress}`, formData, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
         toast.success('Address updated successfully');
       } else {
         // Create new address
-        await axios.post('http://localhost:5001/api/addresses', formData, {
+        await axios.post('/api/addresses', formData, {
           headers: { Authorization: `Bearer ${token}` }
         });
         

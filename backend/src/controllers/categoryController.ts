@@ -1,7 +1,7 @@
+import { logger } from '../lib/logger';
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma';
 
-const prisma = new PrismaClient();
 
 const categoryController = {
   getAllCategories: async (req: Request, res: Response) => {
@@ -11,7 +11,7 @@ const categoryController = {
       });
       return res.json(categories);
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      logger.error('Error fetching categories:', error);
       return res.status(500).json({ 
         error: 'Failed to fetch categories',
         details: process.env.NODE_ENV === 'development' ? String(error) : undefined
@@ -32,7 +32,7 @@ const categoryController = {
       
       return res.json(category);
     } catch (error) {
-      console.error('Error fetching category:', error);
+      logger.error('Error fetching category:', error);
       return res.status(500).json({ error: 'Failed to fetch category' });
     }
   },
@@ -54,7 +54,7 @@ const categoryController = {
       
       return res.status(201).json(newCategory);
     } catch (error) {
-      console.error('Error creating category:', error);
+      logger.error('Error creating category:', error);
       return res.status(500).json({ error: 'Failed to create category' });
     }
   },
@@ -74,7 +74,7 @@ const categoryController = {
       
       return res.json(updatedCategory);
     } catch (error) {
-      console.error('Error updating category:', error);
+      logger.error('Error updating category:', error);
       return res.status(500).json({ error: 'Failed to update category' });
     }
   },
@@ -101,7 +101,7 @@ const categoryController = {
       
       return res.json({ message: 'Category deleted successfully' });
     } catch (error) {
-      console.error('Error deleting category:', error);
+      logger.error('Error deleting category:', error);
       return res.status(500).json({ error: 'Failed to delete category' });
     }
   }

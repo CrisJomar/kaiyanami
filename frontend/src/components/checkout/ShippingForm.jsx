@@ -54,7 +54,7 @@ const ShippingForm = ({ shippingInfo, onSubmit }) => {
   
   const fetchAddresses = async (token) => {
     try {
-      const response = await axios.get('http://localhost:5001/api/addresses', {
+      const response = await axios.get('/api/addresses', {
         headers: { Authorization: `Bearer ${token}` }
       });
       

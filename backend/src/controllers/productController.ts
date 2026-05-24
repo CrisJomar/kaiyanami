@@ -1,3 +1,4 @@
+import { logger } from '../lib/logger';
 import { Request, Response } from 'express';
 import { PrismaClient, Prisma } from '@prisma/client';
 
@@ -17,7 +18,6 @@ declare global {
   }
 }
 
-const prisma = new PrismaClient();
 
 const productController = {
   // Method to get all products
@@ -31,7 +31,7 @@ const productController = {
       });
       res.json(products);
     } catch (error) {
-      console.error('Error fetching products:', error);
+      logger.error('Error fetching products:', error);
       res.status(500).json({ message: 'Error retrieving products' });
     }
   },
@@ -50,7 +50,7 @@ export class ProductController {
       
       res.json(products);
     } catch (error) {
-      console.error('Error fetching products:', error);
+      logger.error('Error fetching products:', error);
       res.status(500).json({ message: 'Error fetching products' });
     }
   }
@@ -58,15 +58,15 @@ export class ProductController {
   static async getById(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      console.log(`Looking up product with ID: "${id}", type: ${typeof id}`);
+      logger.info(`Looking up product with ID: "${id}", type: ${typeof id}`);
       
       if (!id) {
-        console.log("No ID provided");
+        logger.info("No ID provided");
         return res.status(400).json({ message: "Product ID is required" });
       }
       
       // Log the exact query we're about to make
-      console.log(`Finding product where id = "${id}"`);
+      logger.info(`Finding product where id = "${id}"`);
       
       const product = await prisma.product.findUnique({
         where: { id },
@@ -77,11 +77,11 @@ export class ProductController {
       });
       
       if (!product) {
-        console.log(`No product found with ID: "${id}"`);
+        logger.info(`No product found with ID: "${id}"`);
         return res.status(404).json({ message: "Product not found" });
       }
       
-      console.log(`Found product: ${product.name} (ID: ${product.id})`);
+      logger.info(`Found product: ${product.name} (ID: ${product.id})`);
       
       // Transform productSizes to sizes for the frontend
       const transformedProduct = {
@@ -94,7 +94,7 @@ export class ProductController {
       
       return res.json(transformedProduct);
     } catch (error) {
-      console.error("Error in getById:", error);
+      logger.error("Error in getById:", error);
       res.status(500).json({ message: "Error retrieving product" });
     }
   }
@@ -122,7 +122,7 @@ export class ProductController {
       
       res.json(products);
     } catch (error) {
-      console.error('Error fetching products by category:', error);
+      logger.error('Error fetching products by category:', error);
       res.status(500).json({ message: 'Error fetching products by category' });
     }
   }
@@ -137,7 +137,7 @@ export class ProductController {
       
       res.json(products);
     } catch (error) {
-      console.error('Error fetching featured products:', error);
+      logger.error('Error fetching featured products:', error);
       res.status(500).json({ message: 'Error fetching featured products' });
     }
   }
@@ -162,7 +162,7 @@ export class ProductController {
       
       res.json(products);
     } catch (error) {
-      console.error('Error searching products:', error);
+      logger.error('Error searching products:', error);
       res.status(500).json({ message: 'Error searching products' });
     }
   }
@@ -171,7 +171,7 @@ export class ProductController {
     try {
       res.json([]);
     } catch (error) {
-      console.error('Error fetching user view history:', error);
+      logger.error('Error fetching user view history:', error);
       res.status(500).json({ message: 'Error fetching user view history' });
     }
   }
@@ -268,7 +268,7 @@ export class ProductController {
       
       res.status(201).json(product);
     } catch (error) {
-      console.error('Error creating product:', error);
+      logger.error('Error creating product:', error);
       res.status(500).json({ 
         message: 'Error creating product',
         error: String(error)
@@ -343,20 +343,20 @@ export class ProductController {
         }
       }
       if (hasSizes && Array.isArray(sizes)) {
-        console.log('Processing sizes:', sizes.length, 'items');
+        logger.info('Processing sizes:', sizes.length, 'items');
         
         // Delete existing sizes
         const deletedSizes = await prisma.productSize.deleteMany({
           where: { productId: id }
         });
-        console.log('Deleted sizes:', deletedSizes.count);
+        logger.info('Deleted sizes:', deletedSizes.count);
         
         // Add new sizes one by one
         if (sizes.length > 0) {
           const createdSizes = [];
           
           for (const size of sizes) {
-            console.log('Creating size:', size);
+            logger.info('Creating size:', size);
             const created = await prisma.productSize.create({
               data: {
                 productId: id,
@@ -367,11 +367,11 @@ export class ProductController {
             createdSizes.push(created);
           }
           
-          console.log('Created sizes:', createdSizes.length);
+          logger.info('Created sizes:', createdSizes.length);
           
           // Calculate and update total stock
           const totalStock = sizes.reduce((total, size) => total + parseInt(size.stock || 0), 0);
-          console.log('Total stock calculated:', totalStock);
+          logger.info('Total stock calculated:', totalStock);
           
           await prisma.product.update({
             where: { id },
@@ -383,7 +383,7 @@ export class ProductController {
         await prisma.productSize.deleteMany({
           where: { productId: id }
         });
-        console.log('Product does not have sizes - deleted any existing sizes');
+        logger.info('Product does not have sizes - deleted any existing sizes');
       }
       
       const product = await prisma.product.update({
@@ -393,7 +393,7 @@ export class ProductController {
       
       res.json(product);
     } catch (error) {
-      console.error('Error updating product:', error);
+      logger.error('Error updating product:', error);
       res.status(500).json({ message: 'Error updating product' });
     }
   }
@@ -425,7 +425,7 @@ export class ProductController {
         }
       } catch (error) {
         // OrderItem might not exist in schema, continue with delete
-        console.log('OrderItem check skipped');
+        logger.info('OrderItem check skipped');
       }
       
       // Check for cart items - adapt to your schema
@@ -442,7 +442,7 @@ export class ProductController {
         }
       } catch (error) {
         // CartItem might not exist in schema, continue with delete
-        console.log('CartItem check skipped');
+        logger.info('CartItem check skipped');
       }
       
       await prisma.product.delete({
@@ -451,7 +451,7 @@ export class ProductController {
       
       res.json({ message: 'Product deleted successfully' });
     } catch (error) {
-      console.error('Error deleting product:', error);
+      logger.error('Error deleting product:', error);
       res.status(500).json({ message: 'Error deleting product' });
     }
   }
@@ -468,7 +468,7 @@ export class ProductController {
       const sortField = req.query.sortField as string || 'updatedAt';
       const sortDirection = req.query.sortDirection as string || 'desc';
   
-      console.log('Product search params:', { 
+      logger.info('Product search params:', { 
         page, limit, search, category, sortField, sortDirection 
       });
   
@@ -512,7 +512,7 @@ export class ProductController {
         totalPages: Math.ceil(total / limit)
       });
     } catch (error) {
-      console.error('Error fetching product inventory:', error);
+      logger.error('Error fetching product inventory:', error);
       return res.status(500).json({ message: 'Error fetching products' });
     }
   }
@@ -551,7 +551,7 @@ export class ProductController {
         });
       }
     } catch (error) {
-      console.error('Error updating inventory:', error);
+      logger.error('Error updating inventory:', error);
       res.status(500).json({ message: 'Error updating inventory' });
     }
   }
@@ -579,7 +579,7 @@ export class ProductController {
       
       res.json(formattedCategories);
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      logger.error('Error fetching categories:', error);
       res.status(500).json({ message: 'Error fetching categories' });
     }
   }
@@ -624,7 +624,7 @@ export class ProductController {
         name
       });
     } catch (error) {
-      console.error('Error creating category:', error);
+      logger.error('Error creating category:', error);
       res.status(500).json({ message: 'Error creating category' });
     }
   }
@@ -677,7 +677,7 @@ export class ProductController {
         productsUpdated: result.count
       });
     } catch (error) {
-      console.error('Error updating category:', error);
+      logger.error('Error updating category:', error);
       res.status(500).json({ message: 'Error updating category' });
     }
   }
@@ -718,7 +718,7 @@ export class ProductController {
         totalPages: Math.ceil(total / limit)
       });
     } catch (error) {
-      console.error('Error fetching reviews:', error);
+      logger.error('Error fetching reviews:', error);
       res.status(500).json({ message: 'Error fetching reviews' });
     }
   }
@@ -735,7 +735,7 @@ export class ProductController {
       
       res.json(review);
     } catch (error) {
-      console.error('Error updating review:', error);
+      logger.error('Error updating review:', error);
       res.status(500).json({ message: 'Error updating review' });
     }
   }
@@ -820,7 +820,7 @@ export class ProductController {
         topProducts
       });
     } catch (error) {
-      console.error('Error generating analytics:', error);
+      logger.error('Error generating analytics:', error);
       res.status(500).json({ message: 'Error generating analytics' });
     }
   }
@@ -870,7 +870,7 @@ export class ProductController {
         totalPages: Math.ceil(total / limit)
       });
     } catch (error) {
-      console.error('Error fetching customers:', error);
+      logger.error('Error fetching customers:', error);
       res.status(500).json({ message: 'Error fetching customers' });
     }
   }
@@ -897,7 +897,7 @@ export class ProductController {
       
       res.json(customer);
     } catch (error) {
-      console.error('Error fetching customer details:', error);
+      logger.error('Error fetching customer details:', error);
       res.status(500).json({ message: 'Error fetching customer details' });
     }
   }
@@ -923,7 +923,7 @@ export const getAllProducts = async (_req: Request, res: Response) => {
 
     res.json(transformedProducts);
   } catch (error) {
-    console.error('Error fetching products:', error);
+    logger.error('Error fetching products:', error);
     res.status(500).json({ message: 'Server error', error });
   }
 };
@@ -946,11 +946,11 @@ export const getProductById = async (req: Request, res: Response) => {
     }
     
     // Log the raw product
-    console.log('Raw product from database:');
-    console.log('- id:', product.id);
-    console.log('- name:', product.name);
-    console.log('- hasSizes:', product.hasSizes);
-    console.log('- productSizes.length:', product.productSizes.length);
+    logger.info('Raw product from database:');
+    logger.info('- id:', product.id);
+    logger.info('- name:', product.name);
+    logger.info('- hasSizes:', product.hasSizes);
+    logger.info('- productSizes.length:', product.productSizes.length);
     
     // Create a plain object from the Prisma model
     const plainProduct = {
@@ -973,14 +973,14 @@ export const getProductById = async (req: Request, res: Response) => {
     };
     
     // Log what we're sending
-    console.log('Sending transformed product:');
-    console.log('- sizes array length:', plainProduct.sizes.length);
-    console.log('- first size:', plainProduct.sizes[0]);
+    logger.info('Sending transformed product:');
+    logger.info('- sizes array length:', plainProduct.sizes.length);
+    logger.info('- first size:', plainProduct.sizes[0]);
     
     // Send the response
     return res.json(plainProduct);
   } catch (error) {
-    console.error('Error fetching product by ID:', error);
+    logger.error('Error fetching product by ID:', error);
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -1001,7 +1001,7 @@ export const createProduct = async (req: Request, res: Response) => {
       discountPercentage 
     } = req.body;
     
-    console.log('Creating product with data:', { 
+    logger.info('Creating product with data:', { 
       name, price, categoryName, featured, hasSizes 
     });
     
@@ -1019,31 +1019,31 @@ export const createProduct = async (req: Request, res: Response) => {
     
     // Handle category
     if (categoryName) {
-      console.log('Processing category:', categoryName);
+      logger.info('Processing category:', categoryName);
       // Find or create the category
       let category = await prisma.category.findFirst({
         where: { name: categoryName }
       });
       
       if (!category) {
-        console.log('Creating new category:', categoryName);
+        logger.info('Creating new category:', categoryName);
         category = await prisma.category.create({
           data: {
             name: categoryName,
             description: ''
           }
         });
-        console.log('Created new category with ID:', category.id);
+        logger.info('Created new category with ID:', category.id);
       } else {
-        console.log('Found existing category with ID:', category.id);
+        logger.info('Found existing category with ID:', category.id);
       }
       
       // Set the categoryId on the product
       productData.categoryId = category.id;
       
-      console.log('Set categoryId to:', category.id);
+      logger.info('Set categoryId to:', category.id);
     } else {
-      console.log('No category provided');
+      logger.info('No category provided');
     }
     
     // Rest of your product creation logic...
@@ -1057,12 +1057,12 @@ export const createProduct = async (req: Request, res: Response) => {
       }
     });
     
-    console.log('Product created with categoryId:', createdProduct.categoryId);
-    console.log('Category data:', createdProduct.category);
+    logger.info('Product created with categoryId:', createdProduct.categoryId);
+    logger.info('Category data:', createdProduct.category);
     
     res.status(201).json(createdProduct);
   } catch (error) {
-    console.error('Error creating product:', error);
+    logger.error('Error creating product:', error);
     res.status(500).json({ 
       message: 'Error creating product',
       error: error instanceof Error ? error.message : String(error)
@@ -1087,10 +1087,10 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
       sizes 
     } = req.body;
     
-    console.log('Updating product ID:', id);
-    console.log('Request body:', req.body);
-    console.log('Has sizes:', hasSizes);
-    console.log('Sizes array:', sizes);
+    logger.info('Updating product ID:', id);
+    logger.info('Request body:', req.body);
+    logger.info('Has sizes:', hasSizes);
+    logger.info('Sizes array:', sizes);
     
     // Start a transaction to ensure consistency
     const result = await prisma.$transaction(async (tx) => {
@@ -1167,17 +1167,17 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
         if (updateData.hasSizes) {
           // If sizes were provided, update them
           if (sizesProvided) {
-            console.log('Processing new sizes:', sizes.length, 'items');
+            logger.info('Processing new sizes:', sizes.length, 'items');
             
             // Delete existing sizes
             const deletedSizes = await tx.productSize.deleteMany({
               where: { productId: id }
             });
-            console.log('Deleted sizes:', deletedSizes.count);
+            logger.info('Deleted sizes:', deletedSizes.count);
             
             // Add new sizes
             for (const size of sizes) {
-              console.log('Creating size:', size);
+              logger.info('Creating size:', size);
               await tx.productSize.create({
                 data: {
                   productId: id,
@@ -1189,7 +1189,7 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
             
             // Calculate and update total stock
             const totalStock = sizes.reduce((total, size) => total + parseInt(size.stock || 0), 0);
-            console.log('Total stock calculated:', totalStock);
+            logger.info('Total stock calculated:', totalStock);
             updateData.stock = totalStock;
           } else if (hasSizesChanged && !existingProduct.hasSizes) {
             // If hasSizes changed from false to true but no sizes provided,
@@ -1201,7 +1201,7 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
                 stock: existingProduct.stock || 0
               }
             });
-            console.log('Created default size with stock:', existingProduct.stock);
+            logger.info('Created default size with stock:', existingProduct.stock);
           }
           // If hasSizes is true and wasn't changed, and no new sizes were provided,
           // keep existing sizes (do nothing)
@@ -1210,7 +1210,7 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
           await tx.productSize.deleteMany({
             where: { productId: id }
           });
-          console.log('Product does not have sizes - deleted any existing sizes');
+          logger.info('Product does not have sizes - deleted any existing sizes');
           
           // If stock was provided, use it, otherwise use existing stock
           if (stock !== undefined) {
@@ -1251,11 +1251,11 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
       }))
     };
     
-    console.log('Product updated successfully with sizes:', transformedProduct.sizes?.length || 0);
+    logger.info('Product updated successfully with sizes:', transformedProduct.sizes?.length || 0);
     
     res.json(transformedProduct);
   } catch (error) {
-    console.error('Error updating product:', error);
+    logger.error('Error updating product:', error);
     res.status(500).json({ 
       message: 'Server error',
       error: error instanceof Error ? error.message : String(error)
@@ -1305,7 +1305,7 @@ export const deleteProduct = async (req: Request, res: Response) => {
     
     res.json({ message: 'Product deleted successfully' });
   } catch (error) {
-    console.error('Error deleting product:', error);
+    logger.error('Error deleting product:', error);
     res.status(500).json({ message: 'Error deleting product' });
   }
 };
@@ -1344,7 +1344,7 @@ export const getProductsByCategory = async (req: Request, res: Response) => {
     
     res.json(transformedProducts);
   } catch (error) {
-    console.error('Error fetching products by category:', error);
+    logger.error('Error fetching products by category:', error);
     res.status(500).json({ message: 'Error fetching products by category' });
   }
 };
@@ -1375,7 +1375,7 @@ export const searchProducts = async (req: Request, res: Response) => {
     
     res.json(products);
   } catch (error) {
-    console.error('Error searching products:', error);
+    logger.error('Error searching products:', error);
     res.status(500).json({ message: 'Error searching products' });
   }
 };
@@ -1400,7 +1400,7 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
 
     res.json(transformedProducts);
   } catch (error) {
-    console.error('Error fetching products:', error);
+    logger.error('Error fetching products:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -1411,7 +1411,7 @@ export const getProduct = async (req: Request, res: Response): Promise<void> => 
     const { id } = req.params;
     
     // Add debug log
-    console.log('Fetching product ID:', id);
+    logger.info('Fetching product ID:', id);
     
     const product = await prisma.product.findUnique({
       where: { id },
@@ -1438,7 +1438,7 @@ export const getProduct = async (req: Request, res: Response): Promise<void> => 
     }
     
     // Debug log the database result
-    console.log('Product from database:', {
+    logger.info('Product from database:', {
       id: product.id,
       name: product.name,
       hasSizes: product.hasSizes,
@@ -1456,7 +1456,7 @@ export const getProduct = async (req: Request, res: Response): Promise<void> => 
     
     res.json(transformedProduct);
   } catch (error) {
-    console.error('Error fetching product:', error);
+    logger.error('Error fetching product:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };

@@ -1,99 +1,104 @@
-import authMiddleware from '../middleware/authMiddleware';
-import { Request, Response, NextFunction, RequestHandler } from 'express';
-import jwt from 'jsonwebtoken';
+/**
+ * Re-exports auth middleware so route files can import from one place.
+ *
+ * Usage:
+ *   import { auth, verifyToken, optionalAuth, isAdmin } from '../utils/middlewareHelpers';
+ */
 
-// Export auth as an alias for authMiddleware
-export const auth = authMiddleware as RequestHandler;
+import { Request, Response, NextFunction, RequestHandler } from "express";
+import jwt from "jsonwebtoken";
+import { authenticateToken } from "../middleware/authMiddleware";
+import { logger } from "../lib/logger";
 
-// Verify JWT token middleware
-export const verifyToken: RequestHandler = (req, res, next): void => {
+/** Require a valid JWT (401/403 on failure). */
+export const auth: RequestHandler = authenticateToken as RequestHandler;
+
+/** Alias kept for backward compatibility. */
+export const verifyToken: RequestHandler = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void => {
+  const token = req.headers.authorization?.split(" ")[1];
+
+  if (!token) {
+    res.status(401).json({ message: "No token provided" });
+    return;
+  }
+
   try {
-    const token = req.headers.authorization?.split(' ')[1];
-    
-    if (!token) {
-      console.log("❌ No token provided");
-      res.status(401).json({ message: 'No token provided' });
-      return;
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'default-secret');
-    console.log("✅ Token decoded:", decoded);
-    
-    // Attach to req.user
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+      id: string;
+      email: string;
+      role: string;
+    };
     (req as any).user = decoded;
-    
     next();
-  } catch (error) {
-    console.error("❌ Invalid token:", error);
-    res.status(401).json({ message: 'Invalid or expired token' });
+  } catch (err) {
+    logger.warn("verifyToken: invalid token", { error: (err as Error).message });
+    res.status(401).json({ message: "Invalid or expired token" });
   }
 };
 
-// Create proper optionalAuth middleware that won't be undefined
-export const optionalAuth = (req: Request, res: Response, next: NextFunction) => {
+/**
+ * Optional auth — populates req.user if a valid token is present,
+ * but never rejects the request (allows guest access).
+ */
+export const optionalAuth: RequestHandler = (
+  req: Request,
+  _res: Response,
+  next: NextFunction
+): void => {
+  const token = req.headers.authorization?.split(" ")[1];
+
+  if (!token) {
+    next();
+    return;
+  }
+
   try {
-    // Try to verify the token but don't reject if it fails
-    const authHeader = req.headers.authorization;
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      // No token, but that's okay - continue as guest
-      req.user = undefined;
-      return next();
-    }
-    
-    try {
-      // Use the regular auth middleware but catch any errors
-      (authMiddleware as any)(req, res, (err?: any) => {
-        if (err) {
-          // Token invalid but continue anyway
-          req.user = undefined;
-        }
-        // Otherwise req.user was set by authMiddleware
-        next();
-      });
-    } catch (error) {
-      // If anything goes wrong, just proceed as guest
-      req.user = undefined;
-      next();
-    }
-  } catch (error) {
-    // Failsafe - always continue the request
-    req.user = undefined;
-    next();
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+      id: string;
+      email: string;
+      role: string;
+    };
+    (req as any).user = decoded;
+  } catch {
+    // Invalid token → continue as guest
   }
-};
-
-// Add the role-based authorization middleware
-export const authorize = (roles: string[]): RequestHandler => {
-  return (req: any, res: any, next: any) => {
-    if (!req.user) {
-      return res.status(401).json({ message: 'Not authenticated' });
-    }
-    
-    if (roles.includes(req.user.role)) {
-      return next();
-    }
-    
-    return res.status(403).json({ message: 'Unauthorized access' });
-  };
-};
-
-// Update your isAdmin middleware to ensure it properly calls next() or returns
-export const isAdmin = (req: Request, res: Response, next: NextFunction): void => {
-  // Check if user is admin
-  const user = req.user as any; 
-  
-  if (!user) {
-    res.status(401).json({ message: 'Unauthorized' });
-    return; 
-  }
-  
-  if (user.role !== 'admin') {
-    res.status(403).json({ message: 'Forbidden: Admin access required' });
-    return; 
-  }
-  
-  // User is admin, proceed
   next();
 };
 
+/** Require the 'admin' role (must come after auth/verifyToken). */
+export const isAdmin: RequestHandler = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void => {
+  const user = req.user as any;
+  if (!user) {
+    res.status(401).json({ message: "Unauthorized" });
+    return;
+  }
+  if (user.role !== "admin") {
+    res.status(403).json({ message: "Forbidden: Admin access required" });
+    return;
+  }
+  next();
+};
+
+/** Generic role-based authorization factory. */
+export const authorize = (roles: string[]): RequestHandler => {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const user = req.user as any;
+    if (!user) {
+      res.status(401).json({ message: "Not authenticated" });
+      return;
+    }
+    if (!roles.includes(user.role)) {
+      res.status(403).json({ message: "Unauthorized access" });
+      return;
+    }
+    next();
+  };
+};

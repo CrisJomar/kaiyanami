@@ -1,11 +1,11 @@
-import { PrismaClient } from "@prisma/client";
+import { logger } from '../lib/logger';
+import prisma from "../lib/prisma";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
 import dotenv from "dotenv";
 
 dotenv.config();
-const prisma = new PrismaClient();
 
 const userSchema = z.object({
   firstName: z.string().min(2, { message: "First name must be at least 2 characters" }),
@@ -41,7 +41,7 @@ export class AuthService {
       });
       
     } catch (error) {
-      console.error("Error in registerUser:", error);
+      logger.error("Error in registerUser:", error);
       throw new Error(error instanceof Error ? error.message : "Failed to register user");
     }
   }
@@ -56,7 +56,7 @@ export class AuthService {
       // Generate JWT token
       return jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET || "default_secret", { expiresIn: "1h" });
     } catch (error) {
-      console.error("Error in loginUser:", error);
+      logger.error("Error in loginUser:", error);
       throw new Error(error instanceof Error ? error.message : "Authentication failed");
     }
   }

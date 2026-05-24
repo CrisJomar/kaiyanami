@@ -1,6 +1,7 @@
+import { logger } from '../lib/logger';
 import { Router } from "express";
 import { auth, verifyToken, optionalAuth, isAdmin, authorize } from '../utils/middlewareHelpers';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -8,7 +9,6 @@ import fs from 'fs';
 import nodemailer from 'nodemailer';
 
 
-const prisma = new PrismaClient();
 const router = Router();
 
 // Add email transporter configuration
@@ -63,7 +63,7 @@ router.post('/', verifyToken, async (req: any, res: any) => {
     const { subject, message, priority, orderId } = req.body;
     const userId = req.user?.id;
     
-    console.log('Creating support ticket with order:', { 
+    logger.info('Creating support ticket with order:', { 
       subject, 
       hasOrderId: !!orderId,
       orderIdValue: orderId 
@@ -89,7 +89,7 @@ router.post('/', verifyToken, async (req: any, res: any) => {
       ticketData.orderId = orderId;
       
       // Debug logging
-      console.log('Adding order relationship:', orderId);
+      logger.info('Adding order relationship:', orderId);
     }
     
     const ticket = await prisma.supportTicket.create({
@@ -101,7 +101,7 @@ router.post('/', verifyToken, async (req: any, res: any) => {
     });
     
     // Verify the order was linked
-    console.log('Ticket created with order:', {
+    logger.info('Ticket created with order:', {
       ticketId: ticket.id,
       hasOrder: !!ticket.order,
       orderId: ticket.orderId
@@ -109,7 +109,7 @@ router.post('/', verifyToken, async (req: any, res: any) => {
     
     res.status(201).json(ticket);
   } catch (error) {
-    console.error('Error creating support ticket:', error);
+    logger.error('Error creating support ticket:', error);
     res.status(500).json({ message: 'Failed to create support ticket' });
   }
 });
@@ -143,7 +143,7 @@ router.post('/guest', asyncHandler(async (req: any, res: any) => {
     
     res.status(201).json(ticket);
   } catch (error) {
-    console.error('Error creating guest ticket:', error);
+    logger.error('Error creating guest ticket:', error);
     res.status(500).json({ message: 'Failed to create support ticket', error: (error as Error).message });
   }
 }));
@@ -175,7 +175,7 @@ router.get('/:id', verifyToken, async (req: any, res: any) => {
   try {
     const { id } = req.params;
     
-    console.log('Fetching ticket:', id);
+    logger.info('Fetching ticket:', id);
     
     const ticket = await prisma.supportTicket.findUnique({
       where: { id },
@@ -217,14 +217,14 @@ router.get('/:id', verifyToken, async (req: any, res: any) => {
     }
     
     // Debug: Log the order relationship
-    console.log('Ticket order relationship:', {
+    logger.info('Ticket order relationship:', {
       hasOrder: !!ticket.order,
       orderId: ticket.orderId
     });
     
     res.json(ticket);
   } catch (error) {
-    console.error('Error fetching ticket details:', error);
+    logger.error('Error fetching ticket details:', error);
     res.status(500).json({ message: 'Failed to fetch ticket details' });
   }
 });
@@ -316,7 +316,7 @@ router.post('/:id/messages', verifyToken, asyncHandler(async (req: any, res: any
             </div>
           `
         });
-        console.log(`Email notification sent to ${userEmail} for ticket ${id}`);
+        logger.info(`Email notification sent to ${userEmail} for ticket ${id}`);
       }
       // For guest tickets
       else if (ticket.guestEmail) {
@@ -342,11 +342,11 @@ router.post('/:id/messages', verifyToken, asyncHandler(async (req: any, res: any
             </div>
           `
         });
-        console.log(`Email notification sent to guest ${guestEmail} for ticket ${id}`);
+        logger.info(`Email notification sent to guest ${guestEmail} for ticket ${id}`);
       }
     } catch (emailError) {
       // Log email error but don't fail the request
-      console.error('Failed to send email notification:', emailError);
+      logger.error('Failed to send email notification:', emailError);
     }
   }
   

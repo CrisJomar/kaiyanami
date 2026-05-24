@@ -38,7 +38,7 @@ const Support = () => {
         return;
       }
       
-      const response = await axios.get('http://localhost:5001/api/support/my-tickets', {
+      const response = await axios.get('/api/support/my-tickets', {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -64,7 +64,7 @@ const Support = () => {
           return;
         }
         
-        const response = await axios.get('http://localhost:5001/api/orders', {
+        const response = await axios.get('/api/orders', {
           headers: { Authorization: `Bearer ${token}` }
         });
         
@@ -117,7 +117,7 @@ const Support = () => {
       }
       
       const response = await axios.post(
-        'http://localhost:5001/api/support',
+        '/api/support',
         requestBody,
         {
           headers: {
@@ -199,7 +199,7 @@ const Support = () => {
                         const token = localStorage.getItem('token');
                         if (!token) return;
                         
-                        const response = await axios.get('http://localhost:5001/api/orders', {
+                        const response = await axios.get('/api/orders', {
                           headers: { Authorization: `Bearer ${token}` }
                         });
                         

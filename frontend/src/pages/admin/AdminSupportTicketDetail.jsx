@@ -18,7 +18,7 @@ const AdminSupportTicketDetail = () => {
     try {
       const token = localStorage.getItem('token');
       
-      const response = await axios.get(`http://localhost:5001/api/support/${id}`, {
+      const response = await axios.get(`/api/support/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -38,7 +38,7 @@ const AdminSupportTicketDetail = () => {
     try {
       const token = localStorage.getItem('token');
       await axios.post(
-        `http://localhost:5001/api/support/${id}/messages`,
+        `/api/support/${id}/messages`,
         { message: newMessage },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -58,7 +58,7 @@ const AdminSupportTicketDetail = () => {
       const token = localStorage.getItem('token');
       
       await axios.patch(
-        `http://localhost:5001/api/support/${id}/status`,
+        `/api/support/${id}/status`,
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );

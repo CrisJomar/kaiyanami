@@ -1,115 +1,137 @@
-import express, { ErrorRequestHandler } from 'express';
-import cors from 'cors';
-import dotenv from 'dotenv';
-import { PrismaClient } from '@prisma/client';
-import Stripe from 'stripe';
-import path from 'path';
+import "dotenv/config";
+import express from "express";
+import cors from "cors";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
+import path from "path";
+import Stripe from "stripe";
 
-// Route imports
-import orderRoutes from './routes/orders';
-import paymentRoutes from './routes/payment';
-import cartRoutes from './routes/cart';
-import authRoutes from './routes/auth';
-import adminRoutes from './routes/admin';
-import productRoutes from './routes/products';
-import uploadRoutes from './routes/upload';
-import categoryRoutes from './routes/category';
-import productController from './controllers/productController';
-import emailRoutes from './routes/email';
-import supportRoutes from './routes/support';
-import wishlistRoutes from './routes/wishlist';
-import reviewRoutes from './routes/reviews';
-import analyticsRoutes from './routes/analytics';
-import addressRoutes from './routes/addresses';
-import userRoutes from './routes/userRoutes';
-import reportsRouter from './routes/admin/reports';
+import { errorHandler } from "./middleware/errorHandler";
+import { logger } from "./lib/logger";
+import prisma from "./lib/prisma";
 
-dotenv.config();
+// ── Route imports ────────────────────────────────────────────────────────────
+import authRoutes from "./routes/auth";
+import productRoutes from "./routes/products";
+import cartRoutes from "./routes/cart";
+import orderRoutes from "./routes/orders";
+import paymentRoutes from "./routes/payment";
+import webhookRoutes from "./routes/webhook";
+import adminRoutes from "./routes/admin";
+import categoryRoutes from "./routes/category";
+import uploadRoutes from "./routes/upload";
+import emailRoutes from "./routes/email";
+import supportRoutes from "./routes/support";
+import wishlistRoutes from "./routes/wishlist";
+import reviewRoutes from "./routes/reviews";
+import analyticsRoutes from "./routes/analytics";
+import addressRoutes from "./routes/addresses";
+import userRoutes from "./routes/userRoutes";
+import reportsRouter from "./routes/admin/reports";
+
+// ── Stripe ───────────────────────────────────────────────────────────────────
+export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "", {
+  apiVersion: "2023-10-16" as any,
+  typescript: true,
+});
 
 const app = express();
-const PORT = process.env.PORT || 5001;
-const prisma = new PrismaClient();
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2023-10-16' as any,
-  typescript: true
+const PORT = Number(process.env.PORT ?? 5001);
+
+// ── Security headers ─────────────────────────────────────────────────────────
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" }, // allow serving uploaded images
+  })
+);
+
+// ── CORS ──────────────────────────────────────────────────────────────────────
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:3000",
+  process.env.FRONTEND_URL,
+].filter(Boolean) as string[];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, curl, Postman)
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`CORS: origin '${origin}' not allowed`));
+      }
+    },
+    credentials: true,
+  })
+);
+
+// ── Global rate limiter ────────────────────────────────────────────────────────
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 500,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many requests, please try again later." },
 });
+app.use(globalLimiter);
 
-// ✅ Updated CORS: allow local + deployed frontend
-app.use(cors({
-  origin: (origin, callback) => {
-    const whitelist = [
-      'http://localhost:3000',
-      'http://localhost:5173',
-      'https://your-frontend.vercel.app' // ⬅️ replace with your real deployed frontend
-    ];
-    if (!origin || whitelist.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true
-}));
+// ── Stripe webhook MUST receive raw body ─────────────────────────────────────
+app.use("/api/webhook", express.raw({ type: "application/json" }));
 
-// Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// ── Body parsers ─────────────────────────────────────────────────────────────
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
-// ✅ Updated static file path for Render compatibility
-app.use('/upload', express.static(path.resolve('upload')));
+// ── Static uploads ────────────────────────────────────────────────────────────
+app.use("/uploads", express.static(path.resolve("uploads")));
 
-// Main API routes
-app.use('/api/orders', orderRoutes);
-app.use('/api/cart', cartRoutes);
-app.use('/api/auth', authRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/products', productRoutes);
-app.use('/api/admin/upload', uploadRoutes);
-app.use('/api/categories', categoryRoutes);
-app.use('/api/payment', paymentRoutes);
-app.use('/api/email', emailRoutes);
-app.use('/api/support', supportRoutes);
-app.use('/api/wishlist', wishlistRoutes);
-app.use('/api/reviews', reviewRoutes);
-app.use('/api/analytics', analyticsRoutes);
-app.use('/api/addresses', addressRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/admin/reports', reportsRouter);
-app.use('/api/upload', uploadRoutes);
+// ── Health check ──────────────────────────────────────────────────────────────
+app.get("/", (_req, res) => res.send("Backend is live 🚀"));
+app.get("/api/health", (_req, res) =>
+  res.json({ status: "ok", uptime: process.uptime() })
+);
 
-// ✅ Use dynamic import to avoid require() error in ESM
-app.use('/api/orders/create-order', async (req, res, next) => {
-  const { default: createOrderHandler } = await import('./routes/orderCreate.js');
-  return createOrderHandler(req, res, next);
-});
+// ── API routes ────────────────────────────────────────────────────────────────
+app.use("/api/auth", authRoutes);
+app.use("/api/products", productRoutes);
+app.use("/api/cart", cartRoutes);
+app.use("/api/orders", orderRoutes);
+app.use("/api/payment", paymentRoutes);
+app.use("/api/webhook", webhookRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/categories", categoryRoutes);
+app.use("/api/admin/upload", uploadRoutes);
+app.use("/api/upload", uploadRoutes);
+app.use("/api/email", emailRoutes);
+app.use("/api/support", supportRoutes);
+app.use("/api/wishlist", wishlistRoutes);
+app.use("/api/reviews", reviewRoutes);
+app.use("/api/analytics", analyticsRoutes);
+app.use("/api/addresses", addressRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/admin/reports", reportsRouter);
 
-// Controller-based route
-app.get('/api/products', productController.getAll);
-
-// ✅ Root route for Render health check
-app.get('/', (req, res) => {
-  res.send('Backend is live 🚀');
-});
-
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Server is running' });
-});
-
-// Global error handler
-interface ErrorWithStack extends Error {
-  stack?: string;
-}
-
-const errorHandler: ErrorRequestHandler = (err: ErrorWithStack, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: 'Something went wrong!', error: err.message });
-};
-
+// ── Global error handler (must be last) ──────────────────────────────────────
 app.use(errorHandler);
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+// ── Start server ──────────────────────────────────────────────────────────────
+const server = app.listen(PORT, () => {
+  logger.info(`Server listening on port ${PORT}`, {
+    env: process.env.NODE_ENV ?? "development",
+    port: PORT,
+  });
 });
 
-export default app;
+// ── Graceful shutdown ─────────────────────────────────────────────────────────
+const shutdown = async (signal: string) => {
+  logger.info(`Received ${signal}. Gracefully shutting down…`);
+  server.close(async () => {
+    await prisma.$disconnect();
+    logger.info("Prisma disconnected. Bye 👋");
+    process.exit(0);
+  });
+};
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));

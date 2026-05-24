@@ -1,8 +1,7 @@
 import express from "express";
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma';
 import { optionalAuth } from "../utils/middlewareHelpers";
 
-const prisma = new PrismaClient();
 const router = express.Router();
 
 

@@ -1,10 +1,10 @@
+import { logger } from '../lib/logger';
 // Updated backend/src/controllers/orderController.ts
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma';
 import emailService from '../utils/emailService';
 import Stripe from 'stripe';
 
-const prisma = new PrismaClient();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'your_test_key_here');
 
 // Add proper type definition for OrderItem
@@ -110,7 +110,7 @@ export const getAllOrders = async (req: Request, res: Response) => {
     });
     res.json(orders);
   } catch (error) {
-    console.error('Error fetching orders:', error);
+    logger.error('Error fetching orders:', error);
     res.status(500).json({ error: 'Failed to fetch orders' });
   }
 };
@@ -128,7 +128,7 @@ export const getUserOrders = async (req: Request, res: Response) => {
     });
     res.json(orders);
   } catch (error) {
-    console.error('Error fetching user orders:', error);
+    logger.error('Error fetching user orders:', error);
     res.status(500).json({ error: 'Failed to fetch user orders' });
   }
 };
@@ -182,7 +182,7 @@ export const createOrder = async (req: Request, res: Response) => {
     
     res.status(201).json(order);
   } catch (error) {
-    console.error('Error creating order:', error);
+    logger.error('Error creating order:', error);
     res.status(500).json({ error: 'Failed to create order' });
   }
 };
@@ -196,8 +196,8 @@ export const getOrder = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Order ID is required' });
     }
     
-    console.log("Looking up order:", orderId);
-    console.log("User from request:", user?.id || "Guest access");
+    logger.info("Looking up order:", orderId);
+    logger.info("User from request:", user?.id || "Guest access");
     
     // Get the order with its items
     const order = await prisma.order.findUnique({
@@ -212,19 +212,19 @@ export const getOrder = async (req: Request, res: Response) => {
     });
     
     if (!order) {
-      console.log("Order not found:", orderId);
+      logger.info("Order not found:", orderId);
       return res.status(404).json({ error: 'Order not found' });
     }
 
     // Security check: For user orders, verify ownership
     if (order.userId && user && order.userId !== user.id) {
-      console.log("Unauthorized access attempt:", user.id, "trying to access order for", order.userId);
+      logger.info("Unauthorized access attempt:", user.id, "trying to access order for", order.userId);
       return res.status(403).json({ error: 'Unauthorized access to this order' });
     }
     
     // For guest orders, no additional checks needed since we don't have any user info
     
-    console.log("Order access granted");
+    logger.info("Order access granted");
     
     // Create a simplified response for guest/public consumption
     const formattedOrder = {
@@ -263,7 +263,7 @@ export const getOrder = async (req: Request, res: Response) => {
     
     res.json(formattedOrder);
   } catch (error) {
-    console.error('Error fetching order:', error);
+    logger.error('Error fetching order:', error);
     res.status(500).json({ 
       error: 'Failed to fetch order details',
       details: error instanceof Error ? error.message : String(error)
@@ -305,6 +305,6 @@ async function updateStockLevels(orderItems: any[]) {
     }
   }
   
-  console.log('Stock levels updated successfully');
+  logger.info('Stock levels updated successfully');
 }
 

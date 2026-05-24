@@ -1,5 +1,6 @@
+import { logger } from '../lib/logger';
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma';
 import Stripe from 'stripe';
 import dotenv from 'dotenv';
 import nodemailer from 'nodemailer';
@@ -7,7 +8,6 @@ import * as emailService from '../utils/emailService';
 
 dotenv.config();
 
-const prisma = new PrismaClient();
 // Using default Stripe API version
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
 
@@ -82,7 +82,7 @@ const paymentController = {
         });
       }
       
-      console.log('Creating payment intent for amount:', amount);
+      logger.info('Creating payment intent for amount:', amount);
       
       // Create a PaymentIntent with the order amount and currency
       const paymentIntent = await stripe.paymentIntents.create({
@@ -98,7 +98,7 @@ const paymentController = {
         paymentIntentId: paymentIntent.id
       });
     } catch (error) {
-      console.error('Error creating payment intent:', error);
+      logger.error('Error creating payment intent:', error);
       res.status(500).json({ 
         error: 'Failed to create payment intent',
         message: error instanceof Error ? error.message : 'Unknown error'
@@ -108,13 +108,12 @@ const paymentController = {
   
   // Create order after payment
   createOrder: async (req: Request, res: Response): Promise<Response | void> => {
-    console.time('orderCreation'); // Start timing
-    console.log("1. Starting order creation");
-    console.log("Request body:", JSON.stringify(req.body, null, 2)); // Log full request
+    logger.info("1. Starting order creation");
+    logger.info("Request body:", JSON.stringify(req.body, null, 2)); // Log full request
     
     try {
       // Extract all required fields from request body once
-      console.log("2. Extracting request data");
+      logger.info("2. Extracting request data");
       const { 
         items = [],
         cartItems = [],  
@@ -132,13 +131,13 @@ const paymentController = {
       
       const orderItems = items.length > 0 ? items : cartItems;
       
-      console.log("Email from request:", guestEmail || customer?.email || "No email provided");
-      console.log("Items count:", orderItems.length);
-      console.log("3. Checking items", orderItems.length);
+      logger.info("Email from request:", guestEmail || customer?.email || "No email provided");
+      logger.info("Items count:", orderItems.length);
+      logger.info("3. Checking items", orderItems.length);
       
-      console.log("4. Attempting database operation");
+      logger.info("4. Attempting database operation");
       try {
-        console.log("5. Creating basic order");
+        logger.info("5. Creating basic order");
         
       
         const simpleOrder = await prisma.order.create({
@@ -160,12 +159,12 @@ const paymentController = {
           }
         });
         
-        console.log("6. Created simple order:", simpleOrder.id);
+        logger.info("6. Created simple order:", simpleOrder.id);
         
-        console.log("7. Adding order items");
+        logger.info("7. Adding order items");
         
         const productIds = orderItems.map((item: OrderItem) => item.productId || item.id);
-        console.log("Product IDs to check:", productIds);
+        logger.info("Product IDs to check:", productIds);
 
         const existingProducts = await prisma.product.findMany({
           where: {
@@ -176,25 +175,25 @@ const paymentController = {
           select: { id: true }
         });
 
-        console.log(`Found ${existingProducts.length} of ${productIds.length} products in database`);
+        logger.info(`Found ${existingProducts.length} of ${productIds.length} products in database`);
         const existingProductIds = existingProducts.map((p: { id: string }) => p.id);
         const missingProductIds = productIds.filter((id: string) => !existingProductIds.includes(id));
-        console.log("Missing product IDs:", missingProductIds);
+        logger.info("Missing product IDs:", missingProductIds);
 
         for (const item of orderItems as OrderItem[]) {
           const productId = item.productId || item.id;
           
           if (!productId) {
-            console.warn(`Skipping product with undefined ID`);
+            logger.warn(`Skipping product with undefined ID`);
             continue;
           }
           
           if (!existingProductIds.includes(productId)) {
-            console.warn(`Skipping non-existent product: ${productId}`);
+            logger.warn(`Skipping non-existent product: ${productId}`);
             continue;
           }
           
-          console.log(`8. Adding item ${productId}`);
+          logger.info(`8. Adding item ${productId}`);
           await prisma.orderItem.create({
             data: {
               orderId: simpleOrder.id,
@@ -204,18 +203,17 @@ const paymentController = {
               size: item.size || null
             }
           });
-          console.log(`9. Added item ${productId}`);
+          logger.info(`9. Added item ${productId}`);
         }
         
-        console.log("10. All items added successfully");
+        logger.info("10. All items added successfully");
         
-        console.timeEnd('orderCreation');
         
         const recipientEmail = guestEmail || customer?.email || simpleOrder.guestEmail;
-        console.log("Preparing to send email with recipient:", recipientEmail);
+        logger.info("Preparing to send email with recipient:", recipientEmail);
 
         if (!recipientEmail || recipientEmail.trim() === '') {
-          console.warn("No email address provided - skipping confirmation email");
+          logger.warn("No email address provided - skipping confirmation email");
         } else {
           try {
             emailService.sendOrderConfirmation({
@@ -236,11 +234,11 @@ const paymentController = {
                 postalCode: shippingAddress?.zipCode || '',
                 country: shippingAddress?.country || 'US'
               }
-            }).catch((err: Error) => console.error('Email sending failed, but order was created:', err));
+            }).catch((err: Error) => logger.error('Email sending failed, but order was created:', err));
             
-            console.log("Email sending initiated to", recipientEmail);
+            logger.info("Email sending initiated to", recipientEmail);
           } catch (emailErr) {
-            console.error('Email service error:', emailErr);
+            logger.error('Email service error:', emailErr);
           }
         }
         
@@ -249,15 +247,14 @@ const paymentController = {
           orderId: simpleOrder.id
         });
       } catch (error: any) {
-        console.error("Error in database operations:", error);
+        logger.error("Error in database operations:", error);
         return res.status(500).json({
           error: 'Database operation failed',
           details: error.message || String(error)
         });
       }
     } catch (error: any) {
-      console.error("Error in createOrder:", error);
-      console.timeEnd('orderCreation'); // End timing on error too
+      logger.error("Error in createOrder:", error);
       return res.status(500).json({ error: "Error processing order" });
     }
   },
@@ -276,7 +273,7 @@ const paymentController = {
       );
     } catch (err) {
       const error = err as Error;
-      console.error('Webhook signature verification failed:', error.message);
+      logger.error('Webhook signature verification failed:', error.message);
       return res.status(400).send(`Webhook Error: ${error.message}`);
     }
     
@@ -284,7 +281,7 @@ const paymentController = {
     switch (event.type) {
       case 'payment_intent.succeeded':
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
-        console.log('PaymentIntent was successful:', paymentIntent.id);
+        logger.info('PaymentIntent was successful:', paymentIntent.id);
         
         // Update order if it exists
         try {
@@ -314,16 +311,16 @@ const paymentController = {
               });
             }
             
-            console.log('Order updated to paid:', order.id);
+            logger.info('Order updated to paid:', order.id);
           }
         } catch (err) {
-          console.error('Error updating order status:', err);
+          logger.error('Error updating order status:', err);
         }
         break;
         
       case 'payment_intent.payment_failed':
         const failedPayment = event.data.object as Stripe.PaymentIntent;
-        console.log('Payment failed:', failedPayment.id);
+        logger.info('Payment failed:', failedPayment.id);
         
         // Update order if it exists
         try {
@@ -353,15 +350,15 @@ const paymentController = {
               });
             }
             
-            console.log('Order marked as failed payment:', order.id);
+            logger.info('Order marked as failed payment:', order.id);
           }
         } catch (err) {
-          console.error('Error updating failed payment status:', err);
+          logger.error('Error updating failed payment status:', err);
         }
         break;
         
       default:
-        console.log(`Unhandled event type ${event.type}`);
+        logger.info(`Unhandled event type ${event.type}`);
     }
     
     res.json({ received: true });
@@ -378,8 +375,8 @@ const paymentController = {
         return res.status(400).json({ error: 'Order ID is required' });
       }
       
-      console.log("Looking up order:", orderId);
-      console.log("User from request:", user?.id || "No authenticated user");
+      logger.info("Looking up order:", orderId);
+      logger.info("User from request:", user?.id || "No authenticated user");
       
       // Get the order with its items and address
       const order = await prisma.order.findUnique({
@@ -395,20 +392,20 @@ const paymentController = {
       });
       
       if (!order) {
-        console.log("Order not found:", orderId);
+        logger.info("Order not found:", orderId);
         return res.status(404).json({ error: 'Order not found' });
       }
 
       if (order.userId && user && order.userId !== user.id) {
-        console.log("Unauthorized access attempt:", user.id, "trying to access order for", order.userId);
+        logger.info("Unauthorized access attempt:", user.id, "trying to access order for", order.userId);
         return res.status(403).json({ error: 'Unauthorized access to this order' });
       }
       
-      console.log("Order access granted");
+      logger.info("Order access granted");
       
       res.json(order);
     } catch (error) {
-      console.error('Error fetching order:', error);
+      logger.error('Error fetching order:', error);
       res.status(500).json({ 
         error: 'Failed to fetch order details',
         details: error instanceof Error ? error.message : String(error)
@@ -420,8 +417,8 @@ const paymentController = {
     try {
       const { orderId, email, items } = req.body;
       
-      console.log("Sending confirmation email for order:", orderId, "to:", email);
-      console.log("Items provided:", items);
+      logger.info("Sending confirmation email for order:", orderId, "to:", email);
+      logger.info("Items provided:", items);
       
       if (!email) {
         return res.status(400).json({ message: 'Email address is required' });
@@ -436,7 +433,7 @@ const paymentController = {
         }
       });
       
-      console.log("Email credentials:", process.env.EMAIL_USER);
+      logger.info("Email credentials:", process.env.EMAIL_USER);
       
       // Create a simple array for the order items
       const orderItems = items && Array.isArray(items) ? items.map(item => ({
@@ -529,7 +526,7 @@ const paymentController = {
         </html>
       `;
       
-      console.log("Attempting to send email...");
+      logger.info("Attempting to send email...");
       
       // Send the email
       const info = await transporter.sendMail({
@@ -539,14 +536,14 @@ const paymentController = {
         html: htmlContent
       });
       
-      console.log('Email sent successfully:', info.messageId);
+      logger.info('Email sent successfully:', info.messageId);
       
       res.status(200).json({
         message: 'Order confirmation email sent successfully',
         emailId: info.messageId
       });
     } catch (error) {
-      console.error('Error sending confirmation email:', error);
+      logger.error('Error sending confirmation email:', error);
       res.status(500).json({
         message: 'Failed to send confirmation email',
         error: error instanceof Error ? error.message : 'Unknown error'
@@ -557,7 +554,7 @@ const paymentController = {
 
 export const createOrder = async (req: Request, res: Response) => {
   try {
-    console.log("Order creation started with body:", JSON.stringify(req.body, null, 2));
+    logger.info("Order creation started with body:", JSON.stringify(req.body, null, 2));
     
     // Extract data with defaults to prevent undefined errors
     const { 
@@ -569,7 +566,7 @@ export const createOrder = async (req: Request, res: Response) => {
     
     // Basic validation
     if (!cartItems.length) {
-      console.log("No cart items provided");
+      logger.info("No cart items provided");
       return res.status(400).json({ success: false, message: 'No items in cart' });
     }
     
@@ -610,7 +607,7 @@ export const createOrder = async (req: Request, res: Response) => {
       }
     });
     
-    console.log("Order created successfully:", newOrder);
+    logger.info("Order created successfully:", newOrder);
     
   
     try {
@@ -639,9 +636,9 @@ export const createOrder = async (req: Request, res: Response) => {
           country: shippingAddress.country || 'US'
         }
       });
-      console.log('Order confirmation email sent successfully');
+      logger.info('Order confirmation email sent successfully');
     } catch (emailErr) {
-      console.error('Email service error:', emailErr);
+      logger.error('Email service error:', emailErr);
     }
 
     return res.status(201).json({
@@ -650,7 +647,7 @@ export const createOrder = async (req: Request, res: Response) => {
       order: newOrder
     });
   } catch (error) {
-    console.error("Error creating order:", error);
+    logger.error("Error creating order:", error);
     return res.status(500).json({
       success: false,
       message: 'Failed to create order',

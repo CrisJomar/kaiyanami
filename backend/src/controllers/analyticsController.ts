@@ -1,11 +1,11 @@
+import { logger } from '../lib/logger';
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma';
 
-const prisma = new PrismaClient();
 
 export const getAnalytics = async (req: Request, res: Response) => {
   try {
-    console.log("Generating analytics data...");
+    logger.info("Generating analytics data...");
     
     // Get total revenue
     const ordersWithTotal = await prisma.order.findMany({
@@ -88,7 +88,7 @@ export const getAnalytics = async (req: Request, res: Response) => {
       topProducts: topProductsWithDetails,
     });
   } catch (error) {
-    console.error('Error generating analytics:', error);
+    logger.error('Error generating analytics:', error);
     res.status(500).json({ error: 'Failed to generate analytics data' });
   }
 };
@@ -167,7 +167,7 @@ const analyticsController = {
         },
       });
     } catch (error) {
-      console.error('Error getting dashboard overview:', error);
+      logger.error('Error getting dashboard overview:', error);
       return res.status(500).json({
         success: false,
         error: 'Failed to fetch dashboard overview',
@@ -234,7 +234,7 @@ const analyticsController = {
       
       return res.json(result);
     } catch (error) {
-      console.error('Error generating sales over time data:', error);
+      logger.error('Error generating sales over time data:', error);
       return res.status(500).json({ error: 'Failed to generate time series data' });
     }
   },
@@ -288,7 +288,7 @@ const analyticsController = {
         data: products,
       });
     } catch (error) {
-      console.error('Error fetching top products:', error);
+      logger.error('Error fetching top products:', error);
       return res.status(500).json({
         success: false,
         error: 'Failed to fetch top products',
@@ -394,7 +394,7 @@ const analyticsController = {
         },
       });
     } catch (error) {
-      console.error('Error fetching revenue summary:', error);
+      logger.error('Error fetching revenue summary:', error);
       return res.status(500).json({
         success: false,
         error: 'Failed to fetch revenue summary',
@@ -457,7 +457,7 @@ const analyticsController = {
         data: formattedOrders,
       });
     } catch (error) {
-      console.error('Error fetching recent orders:', error);
+      logger.error('Error fetching recent orders:', error);
       return res.status(500).json({
         success: false,
         error: 'Failed to fetch recent orders',
@@ -531,7 +531,7 @@ const analyticsController = {
         },
       });
     } catch (error) {
-      console.error('Error fetching customer analytics:', error);
+      logger.error('Error fetching customer analytics:', error);
       return res.status(500).json({
         success: false,
         error: 'Failed to fetch customer analytics',

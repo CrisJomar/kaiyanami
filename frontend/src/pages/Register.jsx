@@ -159,7 +159,7 @@ const Register = () => {
         password: formData.password
       };
       
-      const response = await fetch('http://localhost:5001/api/auth/register', {
+      const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -191,7 +191,7 @@ const Register = () => {
 
   const handleGoogleLogin = () => {
     // Redirect to Google OAuth endpoint
-    window.location.href = 'http://localhost:5001/api/auth/google';
+    window.location.href = `${import.meta.env.VITE_API_URL ?? 'http://localhost:5001'}/api/auth/google`;
   };
 
   // Password strength indicator

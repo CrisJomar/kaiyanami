@@ -35,7 +35,7 @@ const Collection = () => {
         setLoading(true);
         
         
-        const productsResponse = await axios.get('http://localhost:5001/api/products');
+        const productsResponse = await axios.get('/api/products');
         const allProducts = productsResponse.data.products || productsResponse.data;
         setProducts(allProducts);
         

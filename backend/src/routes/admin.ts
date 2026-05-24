@@ -1,6 +1,7 @@
+import { logger } from '../lib/logger';
 import express from 'express';
 import { Request, Response, NextFunction } from 'express';
-import { PrismaClient } from '@prisma/client'; 
+import prisma from '../lib/prisma'; 
 import adminController from '../controllers/adminController';
 import authMiddleware from '../middleware/authMiddleware';
 import CategoryController from '../controllers/categoryController';
@@ -8,7 +9,6 @@ import { sendShippingNotificationEmail } from '../utils/emailService';
 import { auth, verifyToken, optionalAuth, isAdmin, authorize } from '../utils/middlewareHelpers'; // Add this
 import { getAnalytics } from '../controllers/analyticsController'; 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // Middleware to check for admin role
 const adminOnly = (req: any, res: any, next: any) => {
@@ -41,7 +41,7 @@ const typedMiddleware = authMiddleware as any;
 // Dashboard routes
 router.get('/stats', typedMiddleware, adminOnly, (req, res) => {
   adminController.getDashboardStats(req, res).catch((err) => {
-    console.error(err);
+    logger.error(err);
     res.status(500).json({ message: 'Server error' });
   });
 });
@@ -49,35 +49,35 @@ router.get('/stats', typedMiddleware, adminOnly, (req, res) => {
 // User management routes
 router.get('/users', typedMiddleware, adminOnly, (req, res) => {
   adminController.getAllUsers(req, res).catch((err) => {
-    console.error(err);
+    logger.error(err);
     res.status(500).json({ message: 'Server error' });
   });
 });
 
 router.get('/users/:id', typedMiddleware, adminOnly, (req, res) => {
   adminController.getUserById(req, res).catch((err) => {
-    console.error(err);
+    logger.error(err);
     res.status(500).json({ message: 'Server error' });
   });
 });
 
 router.post('/users', typedMiddleware, adminOnly, (req, res) => {
   adminController.createUser(req, res).catch((err) => {
-    console.error(err);
+    logger.error(err);
     res.status(500).json({ message: 'Server error' });
   });
 });
 
 router.put('/users/:id', typedMiddleware, adminOnly, (req, res) => {
   adminController.updateUser(req, res).catch((err) => {
-    console.error(err);
+    logger.error(err);
     res.status(500).json({ message: 'Server error' });
   });
 });
 
 router.delete('/users/:id', typedMiddleware, adminOnly, (req, res) => {
   adminController.deleteUser(req, res).catch((err) => {
-    console.error(err);
+    logger.error(err);
     res.status(500).json({ message: 'Server error' });
   });
 });
@@ -85,14 +85,14 @@ router.delete('/users/:id', typedMiddleware, adminOnly, (req, res) => {
 // Order management routes
 router.get('/orders', typedMiddleware, adminOnly, (req, res) => {
   adminController.getAllOrders(req, res).catch((err) => {
-    console.error(err);
+    logger.error(err);
     res.status(500).json({ message: 'Server error' });
   });
 });
 
 router.patch('/orders/:id/status', typedMiddleware, adminOnly, (req, res) => {
   adminController.updateOrderStatus(req, res).catch((err) => {
-    console.error(err);
+    logger.error(err);
     res.status(500).json({ message: 'Server error' });
   });
 });
@@ -146,16 +146,16 @@ router.patch('/orders/:id/ship', typedMiddleware, adminOnly, asyncHandler(async 
             shippingAddress: updatedOrder.shippingAddress
           }
         );
-        console.log(`Shipping notification email sent to ${updatedOrder.user.email}`);
+        logger.info(`Shipping notification email sent to ${updatedOrder.user.email}`);
       } catch (emailError) {
-        console.error('Failed to send email notification:', emailError);
+        logger.error('Failed to send email notification:', emailError);
         // Continue even if email fails
       }
     }
     
     res.status(200).json(updatedOrder);
   } catch (error) {
-    console.error('Error updating order shipping info:', error);
+    logger.error('Error updating order shipping info:', error);
     res.status(500).json({ message: 'Failed to update shipping information' });
   }
 }));
@@ -171,7 +171,7 @@ router.get('/orders/:id', typedMiddleware, adminOnly, asyncHandler(async (req: a
   try {
     const { id } = req.params;
     
-    console.log(`Fetching order details for ID: ${id}`);
+    logger.info(`Fetching order details for ID: ${id}`);
     
     const order = await prisma.order.findUnique({
       where: { id },
@@ -187,14 +187,14 @@ router.get('/orders/:id', typedMiddleware, adminOnly, asyncHandler(async (req: a
     });
     
     if (!order) {
-      console.log(`Order not found with ID: ${id}`);
+      logger.info(`Order not found with ID: ${id}`);
       return res.status(404).json({ message: 'Order not found' });
     }
     
-    console.log(`Order found, returning details`);
+    logger.info(`Order found, returning details`);
     res.status(200).json(order);
   } catch (error) {
-    console.error('Error fetching order details:', error);
+    logger.error('Error fetching order details:', error);
     res.status(500).json({ message: 'Failed to fetch order details' });
   }
 }));
@@ -218,12 +218,12 @@ router.get('/orders-debug', typedMiddleware, adminOnly, asyncHandler(async (req:
       orderBy: { createdAt: 'desc' }
     });
     
-    console.log(`Debug: Found ${orders.length} orders`);
-    orders.forEach(o => console.log(`Order ID: ${o.id}, Status: ${o.status}`));
+    logger.info(`Debug: Found ${orders.length} orders`);
+    orders.forEach(o => logger.info(`Order ID: ${o.id}, Status: ${o.status}`));
     
     res.status(200).json(orders);
   } catch (error) {
-    console.error('Debug endpoint error:', error);
+    logger.error('Debug endpoint error:', error);
     res.status(500).json({ message: 'Debug endpoint error', error: String(error) });
   }
 }));
@@ -236,7 +236,7 @@ router.get('/orders-debug', typedMiddleware, adminOnly, asyncHandler(async (req:
  */
 router.get('/analytics', typedMiddleware, adminOnly, asyncHandler(async (req: any, res: any) => {
   try {
-    console.log("Generating analytics data...");
+    logger.info("Generating analytics data...");
     
     // Get total revenue from orders
     const orders = await prisma.order.findMany({
@@ -319,7 +319,7 @@ router.get('/analytics', typedMiddleware, adminOnly, asyncHandler(async (req: an
       })),
     });
   } catch (error) {
-    console.error("Error generating analytics:", error);
+    logger.error("Error generating analytics:", error);
     res.status(500).json({ message: 'Failed to generate analytics data' });
   }
 }));
@@ -327,28 +327,28 @@ router.get('/analytics', typedMiddleware, adminOnly, asyncHandler(async (req: an
 // Product management routes
 router.get('/products', typedMiddleware, adminOnly, (req, res) => {
   adminController.getAllProducts(req, res).catch((err) => {
-    console.error(err);
+    logger.error(err);
     res.status(500).json({ message: 'Server error' });
   });
 });
 
 router.post('/products', typedMiddleware, adminOnly, (req, res) => {
   adminController.createProduct(req, res).catch((err) => {
-    console.error(err);
+    logger.error(err);
     res.status(500).json({ message: 'Server error' });
   });
 });
 
 router.put('/products/:id', typedMiddleware, adminOnly, (req, res) => {
   adminController.updateProduct(req, res).catch((err) => {
-    console.error(err);
+    logger.error(err);
     res.status(500).json({ message: 'Server error' });
   });
 });
 
 router.delete('/products/:id', typedMiddleware, adminOnly, (req, res) => {
   adminController.deleteProduct(req, res).catch((err) => {
-    console.error(err);
+    logger.error(err);
     res.status(500).json({ message: 'Server error' });
   });
 });
@@ -357,7 +357,7 @@ router.delete('/products/:id', typedMiddleware, adminOnly, (req, res) => {
 router.get('/categories', checkAdmin, (req: Request, res: Response): void => {
   // Change from CategoryController.getAll to CategoryController.getAllCategories
   CategoryController.getAllCategories(req, res).catch((err: Error) => {
-    console.error('Error in GET /admin/categories:', err);
+    logger.error('Error in GET /admin/categories:', err);
     res.status(500).json({ error: 'Failed to fetch categories' });
   });
 });
@@ -365,7 +365,7 @@ router.get('/categories', checkAdmin, (req: Request, res: Response): void => {
 router.post('/categories', checkAdmin, (req: Request, res: Response): void => {
   // Change from CategoryController.create to CategoryController.createCategory
   CategoryController.createCategory(req, res).catch((err: Error) => {
-    console.error('Error in POST /admin/categories:', err);
+    logger.error('Error in POST /admin/categories:', err);
     res.status(500).json({ error: 'Failed to create category' });
   });
 });
@@ -373,7 +373,7 @@ router.post('/categories', checkAdmin, (req: Request, res: Response): void => {
 router.put('/categories/:id', checkAdmin, (req: Request, res: Response): void => {
   // Change from CategoryController.update to CategoryController.updateCategory
   CategoryController.updateCategory(req, res).catch((err: Error) => {
-    console.error('Error in PUT /admin/categories/:id:', err);
+    logger.error('Error in PUT /admin/categories/:id:', err);
     res.status(500).json({ error: 'Failed to update category' });
   });
 });
@@ -381,7 +381,7 @@ router.put('/categories/:id', checkAdmin, (req: Request, res: Response): void =>
 router.delete('/categories/:id', checkAdmin, (req: Request, res: Response): void => {
   // Change from CategoryController.delete to CategoryController.deleteCategory
   CategoryController.deleteCategory(req, res).catch((err: Error) => {
-    console.error('Error in DELETE /admin/categories/:id:', err);
+    logger.error('Error in DELETE /admin/categories/:id:', err);
     res.status(500).json({ error: 'Failed to delete category' });
   });
 });

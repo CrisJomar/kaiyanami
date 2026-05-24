@@ -1,7 +1,7 @@
+import { logger } from '../lib/logger';
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma';
 
-const prisma = new PrismaClient();
 
 // Get all addresses for a user
 export const getAddresses = async (req: Request, res: Response) => {
@@ -19,7 +19,7 @@ export const getAddresses = async (req: Request, res: Response) => {
     
     res.json(addresses);
   } catch (error) {
-    console.error('Error fetching addresses:', error);
+    logger.error('Error fetching addresses:', error);
     res.status(500).json({ error: 'Failed to fetch addresses' });
   }
 };
@@ -40,7 +40,7 @@ export const getSavedAddresses = async (req: Request, res: Response) => {
     
     res.json(savedAddresses);
   } catch (error) {
-    console.error('Error fetching saved addresses:', error);
+    logger.error('Error fetching saved addresses:', error);
     res.status(500).json({ error: 'Failed to fetch saved addresses' });
   }
 };
@@ -96,7 +96,7 @@ export const createSavedAddress = async (req: Request, res: Response) => {
     
     res.status(201).json(newAddress);
   } catch (error) {
-    console.error('Error creating saved address:', error);
+    logger.error('Error creating saved address:', error);
     res.status(500).json({ error: 'Failed to create saved address' });
   }
 };
@@ -160,7 +160,7 @@ export const updateSavedAddress = async (req: Request, res: Response) => {
     
     res.json(updatedAddress);
   } catch (error) {
-    console.error('Error updating saved address:', error);
+    logger.error('Error updating saved address:', error);
     res.status(500).json({ error: 'Failed to update saved address' });
   }
 };
@@ -190,7 +190,7 @@ export const deleteSavedAddress = async (req: Request, res: Response) => {
     
     res.json({ success: true, message: 'Address deleted' });
   } catch (error) {
-    console.error('Error deleting saved address:', error);
+    logger.error('Error deleting saved address:', error);
     res.status(500).json({ error: 'Failed to delete saved address' });
   }
 };

@@ -1,14 +1,12 @@
-import { Request, RequestHandler, Response } from "express";
+import { Request, Response } from "express";
 import { OAuth2Client } from "google-auth-library";
 import jwt from "jsonwebtoken";
-import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
-import emailService, { sendEmail } from '../utils/emailService'; 
-import { ParamsDictionary } from "express-serve-static-core";
-import { ParsedQs } from "qs";
+import { sendEmail } from "../utils/emailService";
+import prisma from "../lib/prisma";
+import { logger } from "../lib/logger";
 
-const prisma = new PrismaClient();
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 export class AuthController {
@@ -18,7 +16,7 @@ export class AuthController {
       const userId = req.user?.id;
       
       if (!userId) {
-        console.log("❌ Invalid token: no user ID found");
+        logger.warn("Invalid token: no user ID found");
         return res.status(401).json({ message: 'Invalid token' });
       }
 
@@ -38,11 +36,11 @@ export class AuthController {
       });
 
       if (!user) {
-        console.log("❌ User not found for ID:", userId);
+        logger.warn("User not found", { userId });
         return res.status(404).json({ message: 'User not found' });
       }
 
-      console.log("✅ Token validation successful for:", user.email);
+      logger.info("Token validated", { email: user.email });
       
       // Return the user object directly
       return res.status(200).json({ 
@@ -50,7 +48,7 @@ export class AuthController {
         isAuthenticated: true 
       });
     } catch (error) {
-      console.error("❌ Error validating token:", error);
+      logger.error("Token validation error", { error: (error as Error).message });
       return res.status(500).json({ message: 'Server error during token validation' });
     }
   }
@@ -71,7 +69,7 @@ export class AuthController {
       });
       
       if (existingUser) {
-        console.log("❌ User already exists:", email);
+        logger.warn("Registration: user already exists", { email });
         return res.status(400).json({ message: "User already exists" });
       }
       
@@ -90,14 +88,13 @@ export class AuthController {
         },
       });
       
-      // Generate token - consistent with your googleLogin method
       const token = jwt.sign(
-        { userId: user.id, role: user.role },
-        process.env.JWT_SECRET || "default-secret",
-        { expiresIn: "7d" }
+        { id: user.id, email: user.email, role: user.role },
+        process.env.JWT_SECRET!,
+        { expiresIn: "7d" } as any
       );
-      
-      console.log("✅ Registration successful for:", email);
+
+      logger.info("User registered", { userId: user.id });
       return res.status(201).json({ token, user: {
         id: user.id,
         email: user.email,
@@ -106,126 +103,67 @@ export class AuthController {
         role: user.role
       }});
     } catch (error) {
-      console.error("❌ Error in register:", error);
+      logger.error("Register error", { error: (error as Error).message });
       return res.status(500).json({ message: "Server error" });
     }
   }
 
-  // Regular user login
+  // Regular user login (kept for backward compat; new routes use routes/auth.ts handler)
   static async login(req: Request, res: Response) {
     try {
-      console.log("Login attempt with data:", req.body);
-      
       const { email, password } = req.body;
-      
-      // Validate email and password are present
-      if (!email) {
-        console.error("Email is missing or undefined");
-        return res.status(400).json({ message: 'Email is required' });
+      if (!email || !password) {
+        return res.status(400).json({ message: "Email and password are required" });
       }
-      
-      if (!password) {
-        console.error("Password is missing or undefined");
-        return res.status(400).json({ message: 'Password is required' });
-      }
-      
-      try {
-        console.log(`Looking up user in database with email: "${email}"`);
-        
-        // Find user by email - wrapped in try/catch to catch database errors
-        const user = await prisma.user.findUnique({
-          where: { 
-            email: email.trim().toLowerCase() // Ensure email is properly formatted
-          },
-        });
-        
-        console.log("Database lookup complete. User found:", user ? "Yes" : "No");
-        
-        if (!user) {
-          return res.status(401).json({ message: "Invalid credentials" });
-        }
-        
-        // Check password
-        console.log("Checking password...");
-        if (!user.password) {
-          console.log("User has no password set");
-          return res.status(401).json({ message: "Invalid credentials" });
-        }
-        
-        console.log("Comparing passwords...");
-        const isPasswordValid = await bcrypt.compare(password, user.password);
-        console.log("Password comparison complete. Valid:", isPasswordValid ? "Yes" : "No");
-        
-        if (!isPasswordValid) {
-          return res.status(401).json({ message: "Invalid credentials" });
-        }
-        
-        // Generate token - consistent with your googleLogin method
-        console.log("Generating JWT token...");
-        const token = jwt.sign(
-          { userId: user.id, role: user.role },
-          process.env.JWT_SECRET || "default-secret",
-          { expiresIn: "7d" }
-        );
-        
-        console.log("✅ Login successful for:", email);
-        return res.json({ 
-          token, 
-          user: {
-            id: user.id,
-            email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            role: user.role
-          }
-        });
-      } catch (dbError) {
-        console.error("Database error during login:", dbError);
-        return res.status(500).json({ message: "Database error", error: dbError instanceof Error ? dbError.message : String(dbError) });
-      }
-    } catch (error) {
-      console.error("❌ Error in login:", error);
-      return res.status(500).json({ 
-        message: "Server error", 
-        error: error instanceof Error ? error.message : String(error) 
+
+      const user = await prisma.user.findFirst({
+        where: { email: { equals: email.trim().toLowerCase(), mode: "insensitive" } },
       });
+
+      if (!user || !user.password) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      if (!isPasswordValid) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+
+      const token = jwt.sign(
+        { id: user.id, email: user.email, role: user.role },
+        process.env.JWT_SECRET!,
+        { expiresIn: "7d" } as any
+      );
+
+      logger.info("User logged in", { userId: user.id });
+      return res.json({
+        token,
+        user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName, role: user.role },
+      });
+    } catch (error) {
+      logger.error("Login error", { error: (error as Error).message });
+      return res.status(500).json({ message: "Server error" });
     }
   }
 
   // Get user profile
   static async getUser(req: any, res: Response) {
     try {
-      // req.user should be populated by verifyToken middleware
-      if (!req.user || !req.user.userId) {
-        console.log("❌ Missing user ID in token");
+      const userId = req.user?.id;
+      if (!userId) {
         return res.status(401).json({ message: "Invalid token" });
       }
-      
-      const userId = req.user.userId;
-      console.log("🔍 Fetching user data for ID:", userId);
-      
-      // Get user from database
+
       const user = await prisma.user.findUnique({
         where: { id: userId },
-        select: { 
-          id: true, 
-          email: true, 
-          firstName: true, 
-          lastName: true, 
-          role: true,
-          createdAt: true 
-        },
+        select: { id: true, email: true, firstName: true, lastName: true, role: true, createdAt: true },
       });
-      
-      if (!user) {
-        console.log("❌ User not found for ID:", userId);
-        return res.status(404).json({ message: "User not found" });
-      }
-      
-      console.log("✅ User data retrieved for:", user.email);
+
+      if (!user) return res.status(404).json({ message: "User not found" });
+
       return res.json(user);
     } catch (error) {
-      console.error("❌ Error in getUser:", error);
+      logger.error("getUser error", { error: (error as Error).message });
       return res.status(500).json({ message: "Server error" });
     }
   }
@@ -257,8 +195,8 @@ export class AuthController {
       // Create verification URL with the JWT token
       const verifyUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-email?token=${verificationToken}`;
       
-      console.log("Sending verification email to:", user.email);
-      console.log("Verification URL:", verifyUrl);
+      logger.info("Sending verification email", { email: user.email });
+      
       
       // Send email
       await sendEmail({
@@ -275,7 +213,7 @@ export class AuthController {
       
       res.json({ message: 'Verification email sent successfully' });
     } catch (error) {
-      console.error('Error sending verification email:', error);
+      logger.error('Send verification email error', { error: (error as Error).message });
       res.status(500).json({ error: 'Failed to send verification email' });
     }
   }
@@ -310,7 +248,7 @@ export class AuthController {
       
       return res.json({ message: 'Email verified successfully' });
     } catch (error) {
-      console.error('Error verifying email:', error);
+      logger.error('Verify email error', { error: (error as Error).message });
       
       if (error instanceof jwt.JsonWebTokenError) {
         return res.status(400).json({ error: 'Invalid or expired verification token' });
@@ -371,7 +309,7 @@ export class AuthController {
       return res.status(200).json({ message: 'If an account exists, a reset link has been sent' });
       
     } catch (error) {
-      console.error('Password reset request error:', error);
+      logger.error('Forgot password error', { error: (error as Error).message });
       return res.status(500).json({ message: 'Server error' });
     }
   }
@@ -400,7 +338,7 @@ export class AuthController {
       return res.status(200).json({ message: 'Token is valid' });
       
     } catch (error) {
-      console.error('Token verification error:', error);
+      logger.error('Reset token verify error', { error: (error as Error).message });
       return res.status(500).json({ message: 'Server error' });
     }
   }
@@ -446,7 +384,7 @@ export class AuthController {
       return res.status(200).json({ message: 'Password has been reset successfully' });
       
     } catch (error) {
-      console.error('Password reset error:', error);
+      logger.error('Reset password error', { error: (error as Error).message });
       return res.status(500).json({ message: 'Server error' });
     }
   }
@@ -459,7 +397,7 @@ export const validateToken = async (req: any, res: Response) => {
     const userId = req.user?.id;
     
     if (!userId) {
-      console.log("❌ No user ID in token");
+      logger.warn("validateToken: no user ID in token");
       return res.status(401).json({ message: 'Invalid token' });
     }
     
@@ -480,11 +418,11 @@ export const validateToken = async (req: any, res: Response) => {
     });
     
     if (!user) {
-      console.log(`❌ User ID ${userId} not found in database`);
+      logger.warn("validateToken: user not found", { userId });
       return res.status(404).json({ message: 'User not found' });
     }
     
-    console.log(`✅ Token validation successful for: ${user.email}`);
+    logger.info("Token validated", { email: user.email });
     
     // Return COMPLETE user object
     return res.json({
@@ -492,7 +430,7 @@ export const validateToken = async (req: any, res: Response) => {
       isAuthenticated: true
     });
   } catch (error) {
-    console.error('❌ Token validation error:', error);
+    logger.error('Token validation error', { error: (error as Error).message });
     return res.status(500).json({ message: 'Server error' });
   }
 };
@@ -503,11 +441,11 @@ export const loginHandler = async (req: Request, res: Response) => {
     const { email, password } = req.body;
 
     // Add debug logging
-    console.log(`🔍 Login attempt for email: ${email}`);
+    
     
     // Validate input
     if (!email || !password) {
-      console.log('❌ Missing email or password');
+      
       return res.status(400).json({ message: 'Email and password are required' });
     }
     
@@ -522,15 +460,15 @@ export const loginHandler = async (req: Request, res: Response) => {
     });
     
     if (!user) {
-      console.log(`❌ User not found with email: ${email}`);
+      logger.warn("Login: user not found", { email });
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
-    console.log(`✅ Found user: ${user.email}`);
+    
     
     // Check if password exists
     if (!user.password) {
-      console.log('❌ User has no password set');
+      
       return res.status(401).json({ message: 'Invalid email or password' });
     }
     
@@ -538,27 +476,22 @@ export const loginHandler = async (req: Request, res: Response) => {
     const passwordMatch = await bcrypt.compare(password, user.password);
     
     if (!passwordMatch) {
-      console.log('❌ Password mismatch');
+      logger.warn('Login: invalid password');
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
-    console.log('✅ Password match successful');
     
-    // Create and sign JWT token
+    
     const token = jwt.sign(
-      { 
-        id: user.id, 
-        email: user.email, 
-        role: user.role 
-      },
-      process.env.JWT_SECRET || 'your-default-secret',
-      { expiresIn: '7d' }
+      { id: user.id, email: user.email, role: user.role },
+      process.env.JWT_SECRET!,
+      { expiresIn: "7d" } as any
     );
     
     // Prepare user data (exclude password)
     const { password: _, ...userData } = user;
     
-    console.log(`✅ Login successful for user: ${user.email}`);
+    logger.info("Login successful", { userId: user.id });
     
     // Return token and user data
     return res.json({
@@ -567,7 +500,7 @@ export const loginHandler = async (req: Request, res: Response) => {
     });
     
   } catch (error) {
-    console.error('❌ Login error:', error);
+    logger.error('Login error', { error: (error as Error).message });
     return res.status(500).json({ message: 'Server error during login' });
   }
 };
@@ -614,7 +547,7 @@ export const changePassword = async (req: Request, res: Response) => {
 
     return res.status(200).json({ message: 'Password updated successfully' });
   } catch (error) {
-    console.error('Password change error:', error);
+    logger.error('Change password error', { error: (error as Error).message });
     return res.status(500).json({ message: 'Server error' });
   }
 };

@@ -12,7 +12,7 @@ const ProductCard = ({ product }) => {
   useEffect(() => {
     const fetchRating = async () => {
       try {
-        const response = await axios.get(`http://localhost:5001/api/reviews/product/${product.id}`);
+        const response = await axios.get(`/api/reviews/product/${product.id}`);
         setRating({
           average: response.data.average,
           total: response.data.total

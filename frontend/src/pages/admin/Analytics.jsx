@@ -37,7 +37,7 @@ const Analytics = () => {
     const fetchAnalytics = async () => {
       try {
         setLoading(true);
-        const response = await axios.get('http://localhost:5001/api/admin/analytics');
+        const response = await axios.get('/api/admin/analytics');
         console.log("Analytics data received:", response.data);
         setAnalyticsData(response.data);
       } catch (err) {

@@ -1,13 +1,13 @@
+import { logger } from '../lib/logger';
 import express, { Request, Response } from "express";
 import Stripe from "stripe";
 import dotenv from "dotenv";
-import { PrismaClient } from "@prisma/client";
+import prisma from "../lib/prisma";
 import { sendOrderConfirmation } from "../utils/emailService"; 
 import { auth, verifyToken, optionalAuth, isAdmin, authorize } from '../utils/middlewareHelpers'; // ✅ Import middleware helpers
 
 dotenv.config();
 const router = express.Router();
-const prisma = new PrismaClient();
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
   apiVersion: "2025-02-24.acacia",
@@ -20,7 +20,7 @@ router.post("/webhook", async (req: Request, res: Response): Promise<void> => {
 
     let event;
     if (!sig) {
-      console.warn("⚠️ Skipping signature verification for manual testing.");
+      logger.warn("⚠️ Skipping signature verification for manual testing.");
       event = { type: "checkout.session.completed", data: { object: req.body } };
     } else {
       event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET!);
@@ -31,10 +31,10 @@ router.post("/webhook", async (req: Request, res: Response): Promise<void> => {
       const customerEmail = session.customer_details?.email;
       const totalAmount = session.amount_total ? session.amount_total / 100 : 0; // ✅ Ensure a valid amount
 
-      console.log(`✅ Payment Successful! Amount: $${totalAmount}`);
+      logger.info(`✅ Payment Successful! Amount: $${totalAmount}`);
 
       if (!customerEmail) {
-        console.error("❌ Missing customer email.");
+        logger.error("❌ Missing customer email.");
         res.status(400).json({ error: "Missing customer email" });
         return;
       }
@@ -43,7 +43,7 @@ router.post("/webhook", async (req: Request, res: Response): Promise<void> => {
       let user = await prisma.user.findUnique({ where: { email: customerEmail } });
 
       if (!user) {
-        console.warn(`⚠️ User not found for email ${customerEmail}, creating a new user.`);
+        logger.warn(`⚠️ User not found for email ${customerEmail}, creating a new user.`);
         user = await prisma.user.create({
           data: {
             email: customerEmail,
@@ -80,7 +80,7 @@ router.post("/webhook", async (req: Request, res: Response): Promise<void> => {
         },
       });
 
-      console.log("✅ Order Saved with ID:", order.id);
+      logger.info("✅ Order Saved with ID:", order.id);
 
       
       await prisma.payment.create({
@@ -94,7 +94,7 @@ router.post("/webhook", async (req: Request, res: Response): Promise<void> => {
         }
       });
 
-      console.log("✅ Payment record created!");
+      logger.info("✅ Payment record created!");
 
       // ✅ Send email confirmation
       await sendOrderConfirmation({
@@ -116,12 +116,12 @@ router.post("/webhook", async (req: Request, res: Response): Promise<void> => {
           country: 'US'
         }
       });
-      console.log("📧 Order confirmation email sent!");
+      logger.info("📧 Order confirmation email sent!");
     }
 
     res.json({ received: true });
   } catch (error: any) {
-    console.error("❌ Webhook Error:", error.message);
+    logger.error("❌ Webhook Error:", error.message);
     res.status(400).json({ error: `Webhook error: ${error.message}` });
   }
 });

@@ -1,11 +1,10 @@
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-import { PrismaClient } from "@prisma/client";
+import prisma from "../lib/prisma";
 import dotenv from "dotenv";
 
 dotenv.config();
 
-const prisma = new PrismaClient();
 
 // Check if required environment variables are set
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;

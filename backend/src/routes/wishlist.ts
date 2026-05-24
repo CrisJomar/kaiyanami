@@ -1,10 +1,9 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma';
 import asyncHandler from 'express-async-handler';
 import { auth, optionalAuth, isAdmin, authorize } from '../utils/middlewareHelpers';
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // Get user's wishlist
 router.get('/', auth, asyncHandler(async (req: any, res: any) => {

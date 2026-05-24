@@ -1,7 +1,7 @@
+import { logger } from '../lib/logger';
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma';
 
-const prisma = new PrismaClient();
 
 export default prisma;
 
@@ -26,7 +26,7 @@ export const getUserAddresses = async (req: Request, res: Response) => {
     
     res.json(addresses);
   } catch (error) {
-    console.error('Error fetching user addresses:', error);
+    logger.error('Error fetching user addresses:', error);
     res.status(500).json({ error: 'Failed to fetch user addresses' });
   }
 };

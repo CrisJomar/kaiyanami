@@ -1,6 +1,5 @@
-import { PrismaClient } from "@prisma/client";
+import prisma from "../lib/prisma";
 
-const prisma = new PrismaClient(); // ✅ Initialize PrismaClient
 
 export class OrderService {
   static async createOrder(userId: string, cartItems: any[], total: number, stripeSessionId: string) {

@@ -15,7 +15,7 @@ const ForgotPassword = () => {
     setError(null);
     
     try {
-      await axios.post('http://localhost:5001/api/auth/forgot-password', { email: email.trim() });
+      await axios.post('/api/auth/forgot-password', { email: email.trim() });
       setIsSubmitted(true);
       toast.info('If an account exists with this email, you will receive password reset instructions.');
     } catch (err) {

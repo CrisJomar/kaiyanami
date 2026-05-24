@@ -1,3 +1,4 @@
+import { logger } from '../lib/logger';
 import express from 'express';
 import { Request, Response, NextFunction } from 'express';
 import { auth } from '../utils/middlewareHelpers';
@@ -18,7 +19,7 @@ router.post('/create-order', asyncHandler(paymentModule.createOrder));
 router.post('/webhook', asyncHandler(paymentModule.default.handleWebhook));
 
 router.get('/order/:orderId', asyncHandler((req: Request, res: Response) => {
-  console.log("Order lookup request received for:", req.params.orderId);
+  logger.info("Order lookup request received for:", req.params.orderId);
   return paymentModule.default.getOrder(req, res);
 }));
 

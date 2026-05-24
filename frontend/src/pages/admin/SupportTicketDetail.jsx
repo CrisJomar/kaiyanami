@@ -21,7 +21,7 @@ const AdminSupportTicketDetail = () => {
       setLoading(true);
       const token = localStorage.getItem('token');
       
-      const response = await axios.get(`http://localhost:5001/api/support/${id}`, {
+      const response = await axios.get(`/api/support/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -51,7 +51,7 @@ const AdminSupportTicketDetail = () => {
       const token = localStorage.getItem('token');
       
       const response = await axios.post(
-        `http://localhost:5001/api/support/${id}/messages`,
+        `/api/support/${id}/messages`,
         { message: newMessage },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -77,7 +77,7 @@ const AdminSupportTicketDetail = () => {
       const token = localStorage.getItem('token');
       
       await axios.patch(
-        `http://localhost:5001/api/support/${id}/status`,
+        `/api/support/${id}/status`,
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -364,7 +364,7 @@ const AdminSupportTicketDetail = () => {
                     </p>
                   </div>
                   <a 
-                    href={`http://localhost:5001${attachment.fileUrl}`} 
+                    href={`${import.meta.env.VITE_API_URL ?? ""}${attachment.fileUrl}`} 
                     download={attachment.fileName}
                     className="text-blue-600 hover:text-blue-800"
                     target="_blank"

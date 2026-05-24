@@ -23,7 +23,7 @@ const Navbar = () => {
       }
       
       const response = await axios.post(
-        'http://localhost:5001/api/auth/send-verification', 
+        '/api/auth/send-verification', 
         {}, 
         { headers: { Authorization: `Bearer ${token}` } }
       );

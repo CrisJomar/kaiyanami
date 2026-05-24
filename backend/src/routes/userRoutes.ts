@@ -1,5 +1,6 @@
+import { logger } from '../lib/logger';
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma';
 import { Request, Response } from 'express';
 import { auth, verifyToken, optionalAuth, isAdmin, authorize } from '../utils/middlewareHelpers';
 
@@ -12,7 +13,6 @@ interface AuthRequest extends Request {
   };
 }
 
-const prisma = new PrismaClient();
 const router = express.Router();
 
 // Get user addresses endpoint
@@ -22,7 +22,7 @@ router.get('/:userId/addresses', authorize(['user', 'admin']), async (req: Reque
     
     
     // Print headers and origin for debugging
-    console.log('Request details:', {
+    logger.info('Request details:', {
       origin: req.headers.origin,
       referer: req.headers.referer,
       path: req.path,
@@ -30,7 +30,7 @@ router.get('/:userId/addresses', authorize(['user', 'admin']), async (req: Reque
     });
     
     // Log the user object for debugging
-    console.log('User from token:', JSON.stringify(req.user, null, 2));
+    logger.info('User from token:', JSON.stringify(req.user, null, 2));
     
     // Security check: Users can only access their own addresses unless they're admins
     if (!req.user) {
@@ -46,7 +46,7 @@ router.get('/:userId/addresses', authorize(['user', 'admin']), async (req: Reque
       (req.user.roles && Array.isArray(req.user.roles) && req.user.roles.includes('admin'));
     
     // Print detailed user info for debugging
-    console.log('Authorization check:', {
+    logger.info('Authorization check:', {
       endpoint: 'Get user addresses',
       requestedUserId: userId,
       currentUserId: req.user.id,
@@ -59,7 +59,7 @@ router.get('/:userId/addresses', authorize(['user', 'admin']), async (req: Reque
     const isFromAdminPanel = referer.includes('/admin/') || referer.includes('admin-dashboard');
     
     if (req.user.id !== userId && !isAdmin && !isFromAdminPanel) {
-      console.log('Access denied:', {
+      logger.info('Access denied:', {
         requestedUserId: userId,
         currentUserId: req.user.id,
         isAdmin: isAdmin,
@@ -85,10 +85,10 @@ router.get('/:userId/addresses', authorize(['user', 'admin']), async (req: Reque
     });
     
     // Send back the addresses
-    console.log(`Found ${addresses.length} addresses for user ${userId}`);
+    logger.info(`Found ${addresses.length} addresses for user ${userId}`);
     res.json(addresses);
   } catch (error) {
-    console.error('Error fetching user addresses:', error);
+    logger.error('Error fetching user addresses:', error);
     res.status(500).json({ error: 'Failed to fetch user addresses' });
   }
 });
@@ -99,7 +99,7 @@ router.get('/admin/get-addresses/:userId', authorize(['admin']), async (req: Req
     const { userId } = req.params;
     
     // Print full request info for debugging
-    console.log('DEBUG - Admin address request:', {
+    logger.info('DEBUG - Admin address request:', {
       userId,
       requestUser: req.user,
       headers: req.headers
@@ -110,10 +110,10 @@ router.get('/admin/get-addresses/:userId', authorize(['admin']), async (req: Req
       where: { userId }
     });
     
-    console.log(`Admin endpoint: Found ${addresses.length} addresses for user ${userId}`);
+    logger.info(`Admin endpoint: Found ${addresses.length} addresses for user ${userId}`);
     res.json(addresses);
   } catch (error) {
-    console.error('Error in admin address endpoint:', error);
+    logger.error('Error in admin address endpoint:', error);
     res.status(500).json({ error: 'Failed to fetch addresses' });
   }
 });
@@ -125,7 +125,7 @@ router.get('/admin-access/:userId/addresses', verifyToken, async (req: Request, 
     const { userId } = req.params;
     
     // Log debug info
-    console.log('Admin access route:', {
+    logger.info('Admin access route:', {
       requestUser: req.user?.email,
       requestedUserId: userId
     });
@@ -146,10 +146,10 @@ router.get('/admin-access/:userId/addresses', verifyToken, async (req: Request, 
       where: { userId }
     });
     
-    console.log(`Admin access: Found ${addresses.length} addresses for user ${userId}`);
+    logger.info(`Admin access: Found ${addresses.length} addresses for user ${userId}`);
     res.json(addresses);
   } catch (error) {
-    console.error('Error in admin address access:', error);
+    logger.error('Error in admin address access:', error);
     res.status(500).json({ error: 'Failed to fetch addresses' });
   }
 });
@@ -202,7 +202,7 @@ router.get('/profile', verifyToken, async (req: Request, res: Response) => {
       } : null
     });
   } catch (error) {
-    console.error("Error fetching user profile:", error);
+    logger.error("Error fetching user profile:", error);
     res.status(500).json({ message: "Server error" });
   }
 });

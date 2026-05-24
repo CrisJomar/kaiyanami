@@ -82,7 +82,7 @@ const CheckoutForm = () => {
       
       setLoadingAddresses(true);
       try {
-        const response = await axios.get('http://localhost:5001/api/addresses', {
+        const response = await axios.get('/api/addresses', {
           headers: { Authorization: `Bearer ${token}` }
         });
         
@@ -380,7 +380,7 @@ const CheckoutForm = () => {
     
 
       const response = await axios.post(
-        'http://localhost:5001/api/orders/create-order',
+        '/api/orders/create-order',
         orderData,
         {
           headers: token ? { 

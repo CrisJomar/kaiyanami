@@ -1,7 +1,6 @@
+import { logger } from '../lib/logger';
 import nodemailer from 'nodemailer';
-import dotenv from 'dotenv';
 
-dotenv.config();
 
 // Create a transporter object using SMTP transport
 const transporter = nodemailer.createTransport({
@@ -17,9 +16,9 @@ const transporter = nodemailer.createTransport({
 // For testing purposes only
 transporter.verify((error, success) => {
   if (error) {
-    console.error('Email verification error:', error);
+    logger.error('Email transporter error', { error: (error as Error).message });
   } else {
-    console.log('Email server is ready to send messages');
+    logger.info('Email transporter ready');
   }
 });
 
@@ -153,10 +152,10 @@ export const sendShippingNotificationEmail = async (
     
     // Send the email
     const info = await transporter.sendMail(mailOptions);
-    console.log('Shipping notification email sent:', info.messageId);
+    logger.info('Shipping notification email sent:', info.messageId);
     return true;
   } catch (error) {
-    console.error('Error sending shipping notification email:', error);
+    logger.error('Error sending shipping notification email:', error);
     return false;
   }
 };
@@ -176,7 +175,7 @@ export async function sendOrderConfirmation(data: OrderConfirmationData): Promis
   const orderDate = data.orderDate ? new Date(data.orderDate) : new Date();
 
   try {
-    console.log("Attempting to send email with data:", {
+    logger.info("Attempting to send email with data:", {
       orderId: data.orderId,
       email: data.email || '(missing)',
       itemCount: data.items?.length || 0
@@ -184,7 +183,7 @@ export async function sendOrderConfirmation(data: OrderConfirmationData): Promis
     
     // More thorough email validation
     if (!data.email || data.email === 'undefined' || data.email === 'null') {
-      console.error(`Missing email address for order confirmation: ${data.orderId}`);
+      logger.error(`Missing email address for order confirmation: ${data.orderId}`);
       return;
     }
 
@@ -319,9 +318,9 @@ export async function sendOrderConfirmation(data: OrderConfirmationData): Promis
     });
 
     // Log success with more details
-    console.log(`Email sent successfully to ${data.email} for order ${data.orderId}`);
+    logger.info(`Email sent successfully to ${data.email} for order ${data.orderId}`);
   } catch (error) {
-    console.error(`Error sending confirmation email for order ${data.orderId}:`, error);
+    logger.error(`Error sending confirmation email for order ${data.orderId}:`, error);
   }
 }
 
@@ -338,7 +337,7 @@ export interface EmailOptions {
 
 export const sendEmail = async (options: EmailOptions): Promise<boolean> => {
   try {
-    console.log(`Sending email to: ${options.to}`);
+    logger.info(`Sending email to: ${options.to}`);
     
     const info = await transporter.sendMail({
       from: options.from || process.env.EMAIL_FROM || '"Kaiyanami Shop" <noreply@kaiyanami.com>',
@@ -348,10 +347,10 @@ export const sendEmail = async (options: EmailOptions): Promise<boolean> => {
       html: options.html
     });
 
-    console.log('Email sent successfully:', info.messageId);
+    logger.info('Email sent successfully:', info.messageId);
     return true;
   } catch (error) {
-    console.error('Error sending email:', error);
+    logger.error('Error sending email:', error);
     return false;
   }
 };

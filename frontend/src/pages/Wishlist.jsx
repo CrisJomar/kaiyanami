@@ -21,7 +21,7 @@ const Wishlist = () => {
       }
       
       try {
-        const response = await axios.get('http://localhost:5001/api/wishlist', {
+        const response = await axios.get('/api/wishlist', {
           headers: { Authorization: `Bearer ${token}` }
         });
         
@@ -41,7 +41,7 @@ const Wishlist = () => {
     const token = localStorage.getItem('token');
     
     try {
-      await axios.delete(`http://localhost:5001/api/wishlist/${productId}`, {
+      await axios.delete(`/api/wishlist/${productId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -103,7 +103,7 @@ const Wishlist = () => {
                 <div className="h-56 bg-gray-200 relative overflow-hidden">
                   {item.product.images && item.product.images[0] && (
                     <img 
-                      src={`http://localhost:5001${item.product.images[0].url}`}
+                      src={`${import.meta.env.VITE_API_URL ?? ""}${item.product.images[0].url}`}
                       alt={item.product.name}
                       className="w-full h-full object-cover transition-transform hover:scale-105"
                     />

@@ -1,13 +1,13 @@
+import { logger } from '../lib/logger';
 import express from 'express';
 import { Request, Response, RequestHandler } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma';
 import { auth, verifyToken, optionalAuth, isAdmin, authorize } from '../utils/middlewareHelpers';
 import asyncHandler from 'express-async-handler';
 import { Router } from 'express';
 import * as productController from '../controllers/productController';
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // Get all categories with product counts
 router.get('/categories', (async function(req: Request, res: Response) {
@@ -32,7 +32,7 @@ router.get('/categories', (async function(req: Request, res: Response) {
     
     res.json(formattedCategories);
   } catch (error) {
-    console.error('Error fetching categories:', error);
+    logger.error('Error fetching categories:', error);
     res.status(500).json({ message: 'Error fetching categories' });
   }
 }) as RequestHandler);
@@ -62,7 +62,7 @@ router.get('/category/:categoryName', (async function(req: Request, res: Respons
     
     res.json(products);
   } catch (error) {
-    console.error('Error fetching products by category:', error);
+    logger.error('Error fetching products by category:', error);
     res.status(500).json({ error: 'Failed to fetch products by category' });
   }
 }) as RequestHandler);
@@ -131,7 +131,7 @@ router.get('/admin', auth, async function(req: Request, res: Response) {
       totalPages: Math.ceil(total / pageSize)
     });
   } catch (error) {
-    console.error('Error fetching filtered products:', error);
+    logger.error('Error fetching filtered products:', error);
     res.status(500).json({ error: 'Failed to fetch products' });
   }
 });
@@ -147,7 +147,7 @@ router.get('/', async function(req: Request, res: Response) {
     });
     res.json(products);
   } catch (error) {
-    console.error('Error fetching products:', error);
+    logger.error('Error fetching products:', error);
     res.status(500).json({ error: 'Failed to fetch products' });
   }
 });
@@ -200,7 +200,7 @@ router.get('/:id', async function(req: Request, res: Response) {
     
     res.json(product);
   } catch (error) {
-    console.error('Error fetching product:', error);
+    logger.error('Error fetching product:', error);
     res.status(500).json({ error: 'Failed to fetch product' });
   }
 });
@@ -260,7 +260,7 @@ router.post('/', auth, async function(req: Request, res: Response) {
       }, 0);
     }
     
-    console.log('Creating product with data:', JSON.stringify(productData, null, 2));
+    logger.info('Creating product with data:', JSON.stringify(productData, null, 2));
     
     // Handle category - find or create by name
     let categoryId = null;
@@ -276,9 +276,9 @@ router.post('/', auth, async function(req: Request, res: Response) {
             description: '' 
           }
         });
-        console.log(`Created new category: ${categoryName} with ID: ${category.id}`);
+        logger.info(`Created new category: ${categoryName} with ID: ${category.id}`);
       } else {
-        console.log(`Found existing category: ${categoryName} with ID: ${category.id}`);
+        logger.info(`Found existing category: ${categoryName} with ID: ${category.id}`);
       }
       
       categoryId = category.id;
@@ -320,7 +320,7 @@ router.post('/', auth, async function(req: Request, res: Response) {
     
     res.status(201).json(product);
   } catch (error) {
-    console.error('Error creating product:', error);
+    logger.error('Error creating product:', error);
     
     if (error instanceof Error && error.name === 'PrismaClientValidationError') {
       res.status(400).json({ 
@@ -418,7 +418,7 @@ router.put('/:id', auth, async function(req: Request, res: Response) {
       updateData.stock = typeof stock === 'string' ? parseInt(stock, 10) : stock;
     }
 
-    console.log('Updating product with data:', JSON.stringify({ id, ...updateData }, null, 2));
+    logger.info('Updating product with data:', JSON.stringify({ id, ...updateData }, null, 2));
     
     // Update in a transaction
     const product = await prisma.$transaction(async (prisma) => {
@@ -465,7 +465,7 @@ router.put('/:id', auth, async function(req: Request, res: Response) {
     
     res.json(product);
   } catch (error) {
-    console.error('Error updating product:', error);
+    logger.error('Error updating product:', error);
     
     if (error instanceof Error && error.name === 'PrismaClientValidationError') {
       res.status(400).json({ 
@@ -491,7 +491,7 @@ router.delete('/:id', auth, async function(req: Request, res: Response) {
     
     res.json({ message: 'Product deleted successfully' });
   } catch (error) {
-    console.error('Error deleting product:', error);
+    logger.error('Error deleting product:', error);
     res.status(500).json({ error: 'Failed to delete product' });
   }
 });

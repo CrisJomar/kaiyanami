@@ -23,7 +23,7 @@ const SearchResults = () => {
   const searchProducts = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`http://localhost:5001/api/products/search?q=${encodeURIComponent(query)}`);
+      const response = await axios.get(`/api/products/search?q=${encodeURIComponent(query)}`);
       setProducts(response.data);
       setError(null);
     } catch (error) {

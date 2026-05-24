@@ -101,7 +101,7 @@ const Dashboard = () => {
   // Split the fetch functions for better error handling
   const fetchUserInfo = async (token) => {
     try {
-      const userResponse = await axios.get('http://localhost:5001/api/auth/user', {
+      const userResponse = await axios.get('/api/auth/user', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       setUser(userResponse.data);
@@ -116,7 +116,7 @@ const Dashboard = () => {
 
   const fetchOrders = async (token) => {
     try {
-      const ordersResponse = await axios.get('http://localhost:5001/api/orders', {
+      const ordersResponse = await axios.get('/api/orders', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       setOrders(ordersResponse.data);
@@ -128,7 +128,7 @@ const Dashboard = () => {
 
   const fetchWishlist = async (token) => {
     try {
-      const wishlistResponse = await axios.get('http://localhost:5001/api/wishlist', {
+      const wishlistResponse = await axios.get('/api/wishlist', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       setWishlistItems(wishlistResponse.data);
@@ -139,7 +139,7 @@ const Dashboard = () => {
 
   const fetchAddresses = async (token) => {
     try {
-      const addressesResponse = await axios.get('http://localhost:5001/api/addresses', {
+      const addressesResponse = await axios.get('/api/addresses', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       setAddresses(addressesResponse.data || []);
@@ -172,7 +172,7 @@ const Dashboard = () => {
     
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:5001/api/addresses/${id}`, {
+      await axios.delete(`/api/addresses/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -187,7 +187,7 @@ const Dashboard = () => {
   const handleSetDefaultAddress = async (id) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`http://localhost:5001/api/addresses/${id}/default`, {}, {
+      await axios.put(`/api/addresses/${id}/default`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -306,7 +306,7 @@ const handleAddressSubmit = async (e) => {
     
     if (editingAddress) {
 
-      await axios.put(`http://localhost:5001/api/addresses/${editingAddress}`, addressFormData, {
+      await axios.put(`/api/addresses/${editingAddress}`, addressFormData, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -316,7 +316,7 @@ const handleAddressSubmit = async (e) => {
       
       toast.success('Address updated successfully');
     } else {
-      const response = await axios.post('http://localhost:5001/api/addresses', addressFormData, {
+      const response = await axios.post('/api/addresses', addressFormData, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -462,7 +462,7 @@ const fetchOrderDetails = async (orderId) => {
   try {
     setLoadingOrderDetails(true);
     const token = localStorage.getItem('token');
-    const response = await axios.get(`http://localhost:5001/api/orders/${orderId}`, {
+    const response = await axios.get(`/api/orders/${orderId}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     
@@ -1138,7 +1138,7 @@ const handleProfileChange = (e) => {
         }
         
         const token = localStorage.getItem('token');
-        fetch(`http://localhost:5001/api/auth/update-profile`, {
+        fetch(`/api/auth/update-profile`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -1350,7 +1350,7 @@ const handleProfileChange = (e) => {
             throw new Error('Authentication token missing. Please log in again.');
           }
           
-          const response = await axios.post(`http://localhost:5001/api/auth/change-password`, passwordFormData, {
+          const response = await axios.post(`/api/auth/change-password`, passwordFormData, {
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${token}`

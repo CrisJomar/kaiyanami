@@ -24,7 +24,7 @@ const UsersManagement = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:5001/api/admin/users');
+      const response = await axios.get('/api/admin/users');
       setUsers(response.data);
       setError(null);
     } catch (err) {
@@ -78,11 +78,11 @@ const UsersManagement = () => {
           delete dataToUpdate.password;
         }
         
-        await axios.put(`http://localhost:5001/api/admin/users/${currentUser.id}`, dataToUpdate);
+        await axios.put(`/api/admin/users/${currentUser.id}`, dataToUpdate);
         toast.success('User updated successfully');
       } else {
         // Create new user
-        await axios.post('http://localhost:5001/api/admin/users', formData);
+        await axios.post('/api/admin/users', formData);
         toast.success('User created successfully');
       }
       
@@ -97,7 +97,7 @@ const UsersManagement = () => {
   const handleDelete = async (userId) => {
     if (window.confirm('Are you sure you want to delete this user?')) {
       try {
-        await axios.delete(`http://localhost:5001/api/admin/users/${userId}`);
+        await axios.delete(`/api/admin/users/${userId}`);
         toast.success('User deleted successfully');
         fetchUsers(); // Refresh user list
       } catch (err) {

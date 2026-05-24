@@ -86,7 +86,7 @@ const UserCheckout = ({ user }) => {
         
         try {
           // Try to fetch from actual endpoint
-          const response = await axios.get('http://localhost:5001/api/addresses/saved', {
+          const response = await axios.get('/api/addresses/saved', {
             headers: { Authorization: `Bearer ${token}` }
           });
           setSavedAddresses(response.data);
@@ -181,7 +181,7 @@ const UserCheckout = ({ user }) => {
       console.log("DEBUG - Sending order data:", JSON.stringify(orderData));
       
       
-      const response = await axios.post('http://localhost:5001/api/orders/create-order', orderData);
+      const response = await axios.post('/api/orders/create-order', orderData);
       
    
       console.log("Server response:", response.data);

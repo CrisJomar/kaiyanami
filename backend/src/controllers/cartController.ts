@@ -1,5 +1,6 @@
+import { logger } from '../lib/logger';
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma';
 
 interface AuthenticatedRequest extends Request {
   user?: {
@@ -10,7 +11,6 @@ interface AuthenticatedRequest extends Request {
   };
 }
 
-const prisma = new PrismaClient();
 
 // Get the current user's cart
 export const getCart = async (req: Request, res: Response) => {
@@ -33,7 +33,7 @@ export const getCart = async (req: Request, res: Response) => {
 
     res.json(cartItems);
   } catch (error) {
-    console.error('Error fetching cart:', error);
+    logger.error('Error fetching cart:', error);
     res.status(500).json({ message: 'Failed to fetch cart' });
   }
 };
@@ -110,7 +110,7 @@ export const addToCart = async (req: Request, res: Response) => {
 
     res.status(200).json(updatedCart);
   } catch (error) {
-    console.error('Error adding to cart:', error);
+    logger.error('Error adding to cart:', error);
     res.status(500).json({ message: 'Failed to add item to cart' });
   }
 };
@@ -158,7 +158,7 @@ export const updateCartItem = async (req: Request, res: Response) => {
 
     res.status(200).json(updatedCart);
   } catch (error) {
-    console.error('Error updating cart item:', error);
+    logger.error('Error updating cart item:', error);
     res.status(500).json({ message: 'Failed to update cart item' });
   }
 };
@@ -204,7 +204,7 @@ export const removeCartItem = async (req: Request, res: Response) => {
 
     res.status(200).json(updatedCart);
   } catch (error) {
-    console.error('Error removing cart item:', error);
+    logger.error('Error removing cart item:', error);
     res.status(500).json({ message: 'Failed to remove cart item' });
   }
 };
@@ -223,7 +223,7 @@ export const clearCart = async (req: Request, res: Response) => {
 
     res.status(200).json({ message: 'Cart cleared successfully' });
   } catch (error) {
-    console.error('Error clearing cart:', error);
+    logger.error('Error clearing cart:', error);
     res.status(500).json({ message: 'Failed to clear cart' });
   }
 };
@@ -307,7 +307,7 @@ export const migrateAnonymousCart = async (req: Request, res: Response) => {
 
     res.status(200).json({ message: 'Cart migrated successfully', cart: updatedCart });
   } catch (error) {
-    console.error('Error migrating cart:', error);
+    logger.error('Error migrating cart:', error);
     res.status(500).json({ message: 'Failed to migrate cart' });
   }
 };
@@ -329,7 +329,7 @@ export const addItem = async (req: Request, res: Response) => {
       item: { productId, quantity, options }
     });
   } catch (error) {
-    console.error('Error adding item to cart:', error);
+    logger.error('Error adding item to cart:', error);
     res.status(500).json({ message: 'Failed to add item to cart' });
   }
 };
@@ -357,7 +357,7 @@ export const updateItemQuantity = async (req: Request, res: Response) => {
       quantity
     });
   } catch (error) {
-    console.error('Error updating item quantity:', error);
+    logger.error('Error updating item quantity:', error);
     res.status(500).json({ message: 'Failed to update item quantity' });
   }
 };
@@ -380,7 +380,7 @@ export const removeItem = async (req: Request, res: Response) => {
       itemId
     });
   } catch (error) {
-    console.error('Error removing item from cart:', error);
+    logger.error('Error removing item from cart:', error);
     res.status(500).json({ message: 'Failed to remove item from cart' });
   }
 };

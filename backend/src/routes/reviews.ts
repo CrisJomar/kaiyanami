@@ -1,11 +1,10 @@
 import express from 'express';
 import { auth, verifyToken, optionalAuth, isAdmin, authorize } from '../utils/middlewareHelpers';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma';
 
 import asyncHandler from 'express-async-handler';
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // Get reviews for a product
 router.get('/product/:productId', asyncHandler(async (req: any, res: any) => {

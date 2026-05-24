@@ -39,10 +39,10 @@ const OrderConfirmation = () => {
         console.log("Fetching order:", orderId); 
         
         // Try the public endpoint first
-        const response = await axios.get(`http://localhost:5001/api/orders/public/${orderId}`)
+        const response = await axios.get(`/api/orders/public/${orderId}`)
           .catch(async () => {
             // If public endpoint fails, try the authenticated endpoint
-            return await axios.get(`http://localhost:5001/api/orders/${orderId}`);
+            return await axios.get(`/api/orders/${orderId}`);
           });
           
         if (response && response.data) {

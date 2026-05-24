@@ -1,7 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import { Routes, Route, Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { Elements } from '@stripe/react-stripe-js';
-import getStripe from "./utils/stripe";
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/ShoppingCartContext';
 
@@ -41,7 +39,6 @@ import Analytics from './pages/admin/Analytics';
 import Settings from './pages/admin/Settings';
 import CheckoutRouter from './components/checkout/CheckoutRouter';
 import AdminReports from './pages/admin/Reports'; // Adjust the path as needed
-import AuthDebug from './components/AuthDebug';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 
@@ -80,45 +77,6 @@ const CheckoutSuccessRedirect = () => {
   return <div>Redirecting...</div>;
 };
 
-// Updated CheckoutWithStripe component with better error handling
-const CheckoutWithStripe = () => {
-  const [stripePromise, setStripePromise] = useState(null);
-  const [stripeError, setStripeError] = useState(null);
-
-  useEffect(() => {
-    const loadStripeInstance = async () => {
-      try {
-        const stripe = await getStripe();
-        setStripePromise(stripe);
-      } catch (error) {
-        console.error("Error loading Stripe:", error);
-        setStripeError("Failed to load payment processor. Please try again later.");
-      }
-    };
-    
-    loadStripeInstance();
-  }, []);
-
-  if (stripeError) {
-    return (
-      <div className="stripe-error">
-        <h2>Payment Error</h2>
-        <p>{stripeError}</p>
-        <button onClick={() => window.location.reload()}>Retry</button>
-      </div>
-    );
-  }
-
-  if (!stripePromise) {
-    return <div>Loading payment processor...</div>;
-  }
-
-  return (
-    <Elements stripe={stripePromise}>
-      <Checkout />
-    </Elements>
-  );
-};
 
 // Layout component
 const Layout = () => {

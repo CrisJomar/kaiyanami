@@ -1,43 +1,66 @@
-# Node modules
+# ── Dependencies ─────────────────────────────────────────────────────────────
 node_modules/
+.pnp
+.pnp.js
+
+# ── Build outputs ─────────────────────────────────────────────────────────────
 dist/
 build/
+frontend/dist/
+frontend/build/
+backend/dist/
 
-# Environment variables
+# ── Environment variables (NEVER commit these) ────────────────────────────────
 .env
 .env.local
 .env.development
+.env.development.local
 .env.test
+.env.test.local
 .env.production
+.env.production.local
+backend/.env
+frontend/.env
+frontend/.env.local
 
-# Logs
+# ── Logs ──────────────────────────────────────────────────────────────────────
 logs/
 *.log
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# Build files
-frontend/dist/
-frontend/build/
+# ── Uploaded user files ───────────────────────────────────────────────────────
+backend/uploads/*
+!backend/uploads/.gitkeep
 
-# Database
+# ── Database ──────────────────────────────────────────────────────────────────
 *.sqlite
 *.db
 
-# Coverage reports
+# ── Coverage ──────────────────────────────────────────────────────────────────
 coverage/
+*.lcov
 
-# Mac specific
+# ── OS artefacts ──────────────────────────────────────────────────────────────
 .DS_Store
+Thumbs.db
 
-# Editor specific
+# ── Editor / IDE ──────────────────────────────────────────────────────────────
 .idea/
 .vscode/
 *.swp
 *.swo
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
 
-# Uploads
-uploads/
-
-# Temp files
+# ── Temp ──────────────────────────────────────────────────────────────────────
 tmp/
 temp/
+
+# ── Prisma generated (regenerated via postbuild) ──────────────────────────────
+backend/node_modules/.prisma/

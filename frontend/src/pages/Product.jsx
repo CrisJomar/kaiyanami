@@ -25,7 +25,7 @@ const Product = () => {
         setLoading(true);
         
     
-        const response = await fetch(`http://localhost:5001/api/products/${id}`);
+        const response = await fetch(`/api/products/${id}`);
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -75,7 +75,7 @@ const Product = () => {
     const fetchProductDetails = async () => {
       if (product && product.hasSizes && !product.productSizes) {
         try {
-          const response = await axios.get(`http://localhost:5001/api/products/${product.id}`);
+          const response = await axios.get(`/api/products/${product.id}`);
           setProductWithSizes(response.data);
         } catch (error) {
           console.error("Error fetching product details:", error);

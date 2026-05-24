@@ -1,3 +1,4 @@
+import { logger } from '../lib/logger';
 import { Request, Response } from 'express';
 import * as wishlistService from '../services/wishlistService';
 
@@ -7,7 +8,7 @@ export const getWishlist = async (req: Request, res: Response) => {
     const wishlist = await wishlistService.getWishlistForUser(userId);
     res.json(wishlist);
   } catch (error) {
-    console.error('Error fetching wishlist:', error);
+    logger.error('Error fetching wishlist:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -21,7 +22,7 @@ export const addToWishlist = async (req: Request, res: Response) => {
     const result = await wishlistService.addToWishlist(userId, productId);
     res.status(201).json(result);
   } catch (error) {
-    console.error('Error adding to wishlist:', error);
+    logger.error('Error adding to wishlist:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -32,7 +33,7 @@ export const removeFromWishlist = async (req: Request, res: Response) => {
     await wishlistService.removeFromWishlist(wishlistItemId);
     res.status(200).json({ message: 'Item removed from wishlist' });
   } catch (error) {
-    console.error('Error removing from wishlist:', error);
+    logger.error('Error removing from wishlist:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };

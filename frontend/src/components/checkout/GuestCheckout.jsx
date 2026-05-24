@@ -60,7 +60,7 @@ const GuestCheckout = () => {
   // Add a server connection check function
   const checkServerConnection = async () => {
     try {
-      await axios.get('http://localhost:5001/api/health', { timeout: 3000 });
+      await axios.get('/api/health', { timeout: 3000 });
       return true;
     } catch (error) {
       console.error("Backend server connection failed:", error);
@@ -137,13 +137,13 @@ const GuestCheckout = () => {
       console.log("Sending order request with payload:", JSON.stringify(requestPayload, null, 2));
       
       // BEFORE making the request
-      console.log("API endpoint:", 'http://localhost:5001/api/payment/create-order');
+      console.log("API endpoint:", '/api/payment/create-order');
       console.log("Checking API health before order request...");
   
       try {
         // First, check if API is responsive at all with a health check
         const healthCheck = await axios.get(
-          'http://localhost:5001/api/health', 
+          '/api/health', 
           { timeout: 5000 }
         ).catch(err => {
           console.log("API health check failed:", err.message);
@@ -158,7 +158,7 @@ const GuestCheckout = () => {
         
         // Then proceed with the order request
         const orderResponse = await axios.post(
-          'http://localhost:5001/api/payment/create-order', 
+          '/api/payment/create-order', 
           requestPayload,
           { 
             headers: { 'Content-Type': 'application/json' },

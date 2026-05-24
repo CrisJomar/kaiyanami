@@ -118,7 +118,7 @@ const Reports = () => {
         }
         
         try {
-          const response = await axios.get(`http://localhost:5001/api/admin/reports/${reportType}`, {
+          const response = await axios.get(`/api/admin/reports/${reportType}`, {
             headers: { Authorization: `Bearer ${token}` },
             params: { startDate, endDate }
           });
@@ -186,7 +186,7 @@ const Reports = () => {
       
       try {
         // Request the export in the specified format
-        const response = await axios.get(`http://localhost:5001/api/admin/reports/${reportType}/export`, {
+        const response = await axios.get(`/api/admin/reports/${reportType}/export`, {
           headers: { Authorization: `Bearer ${token}` },
           params: { 
             format: exportFormat,

@@ -1,9 +1,9 @@
+import { logger } from '../lib/logger';
 import express, { Request, Response, RequestHandler } from "express";
 import { PrismaClient, Prisma } from '@prisma/client';
 import { verifyToken, optionalAuth } from "../utils/middlewareHelpers";
 import { sendOrderConfirmation } from '../utils/emailService'; // Adjust import path as needed
 
-const prisma = new PrismaClient();
 const router = express.Router();
 
 // Define custom request interface
@@ -88,7 +88,7 @@ router.get('/public/:orderId', async (req: Request, res: Response) => {
       shipping: order.shipping
     });
   } catch (error) {
-    console.error('Error fetching order:', error);
+    logger.error('Error fetching order:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -112,7 +112,7 @@ router.get('/', verifyToken, async (req: AuthRequest, res: Response) => {
     
     res.json(orders);
   } catch (error) {
-    console.error("Error fetching orders:", error);
+    logger.error("Error fetching orders:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
@@ -144,7 +144,7 @@ router.get('/:id', verifyToken, async (req: AuthRequest, res: Response) => {
     
     res.json(order);
   } catch (error) {
-    console.error("Error fetching order:", error);
+    logger.error("Error fetching order:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
@@ -155,7 +155,7 @@ router.post('/create-order', optionalAuth, async (req: AuthRequest, res: Respons
     const user = req.user;
     const { customer, shipping, payment, items } = req.body as OrderCreationBody;
     
-    console.log("CREATE ORDER REQUEST:", { 
+    logger.info("CREATE ORDER REQUEST:", { 
       user: user ? { id: user.id, email: user.email } : "guest",
       customer,
       shipping,
@@ -164,7 +164,7 @@ router.post('/create-order', optionalAuth, async (req: AuthRequest, res: Respons
     });
     
     if (!shipping || !items || !payment) {
-      console.log("❌ Missing required fields:", { 
+      logger.info("❌ Missing required fields:", { 
         hasShipping: !!shipping, 
         hasItems: !!items, 
         hasPayment: !!payment 
@@ -200,7 +200,7 @@ router.post('/create-order', optionalAuth, async (req: AuthRequest, res: Respons
         select: { firstName: true, lastName: true, email: true }
       });
       
-      console.log(" user name:", userDetails?.firstName, userDetails?.lastName);
+      logger.info(" user name:", userDetails?.firstName, userDetails?.lastName);
       
       // Create shipping address
       const shippingAddress = await prisma.address.create({
@@ -283,10 +283,10 @@ router.post('/create-order', optionalAuth, async (req: AuthRequest, res: Respons
           size: item.size
         }))
       });
-      console.log("✉️ Order confirmation email sent to:", user ? user.email : customer?.email);
+      logger.info("✉️ Order confirmation email sent to:", user ? user.email : customer?.email);
     } catch (emailError) {
       // Don't fail the order if email fails, just log it
-      console.error("⚠️ Failed to send order confirmation email:", emailError);
+      logger.error("⚠️ Failed to send order confirmation email:", emailError);
     }
     
     res.status(201).json({ 
@@ -295,9 +295,9 @@ router.post('/create-order', optionalAuth, async (req: AuthRequest, res: Respons
       order  
     });
   } catch (error) {
-    console.error("🔴 Error creating order:", error);
+    logger.error("🔴 Error creating order:", error);
     if (error instanceof Error) {
-      console.error("Error details:", {
+      logger.error("Error details:", {
         message: error.message,
         stack: error.stack,
         name: error.name

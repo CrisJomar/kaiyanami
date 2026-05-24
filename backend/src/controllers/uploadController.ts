@@ -1,3 +1,4 @@
+import { logger } from '../lib/logger';
 import { Request, Response } from 'express';
 
 const uploadController = {
@@ -18,7 +19,7 @@ const uploadController = {
         message: 'File uploaded successfully'
       });
     } catch (error) {
-      console.error('Error uploading file:', error);
+      logger.error('Error uploading file:', error);
       res.status(500).json({ error: 'File upload failed' });
     }
   },
@@ -40,7 +41,7 @@ const uploadController = {
         message: 'Product image uploaded successfully'
       });
     } catch (error) {
-      console.error('Error uploading product image:', error);
+      logger.error('Error uploading product image:', error);
       res.status(500).json({ error: 'Product image upload failed' });
     }
   },
@@ -62,7 +63,7 @@ const uploadController = {
         message: `${files.length} files uploaded successfully`
       });
     } catch (error) {
-      console.error('Error uploading multiple files:', error);
+      logger.error('Error uploading multiple files:', error);
       res.status(500).json({ error: 'File uploads failed' });
     }
   }

@@ -20,7 +20,7 @@ const SupportManagement = () => {
       setLoading(true);
       const token = localStorage.getItem('token');
       
-      const response = await axios.get('http://localhost:5001/api/support', {
+      const response = await axios.get('/api/support', {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -38,7 +38,7 @@ const SupportManagement = () => {
       const token = localStorage.getItem('token');
       
       await axios.patch(
-        `http://localhost:5001/api/support/${ticketId}/status`,
+        `/api/support/${ticketId}/status`,
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );

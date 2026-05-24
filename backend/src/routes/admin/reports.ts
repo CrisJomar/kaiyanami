@@ -1,5 +1,6 @@
+import { logger } from '../lib/logger';
 import { Router, Request, Response, NextFunction } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../../lib/prisma';
 import { verifyToken, isAdmin } from '../../utils/middlewareHelpers';
 import { format, parseISO, subDays, startOfMonth, endOfMonth } from 'date-fns';
 import { createObjectCsvStringifier } from 'csv-writer';
@@ -7,7 +8,6 @@ import PDFDocument from 'pdfkit';
 import { Workbook } from 'exceljs';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Type definitions for report data
 interface ReportData {
@@ -329,7 +329,7 @@ router.get('/sales', verifyToken, isAdmin, async (req: Request, res: Response) =
     );
     res.json(reportData);
   } catch (error) {
-    console.error('Error generating sales report:', error);
+    logger.error('Error generating sales report:', error);
     res.status(500).json({ message: 'Error generating sales report' });
   }
 });
@@ -343,7 +343,7 @@ router.get('/products', verifyToken, isAdmin, async (req: Request, res: Response
     );
     res.json(reportData);
   } catch (error) {
-    console.error('Error generating product report:', error);
+    logger.error('Error generating product report:', error);
     res.status(500).json({ message: 'Error generating product report' });
   }
 });
@@ -357,7 +357,7 @@ router.get('/customers', verifyToken, isAdmin, async (req: Request, res: Respons
     );
     res.json(reportData);
   } catch (error) {
-    console.error('Error generating customer report:', error);
+    logger.error('Error generating customer report:', error);
     res.status(500).json({ message: 'Error generating customer report' });
   }
 });
@@ -371,7 +371,7 @@ router.get('/support', verifyToken, isAdmin, async (req: Request, res: Response)
     );
     res.json(reportData);
   } catch (error) {
-    console.error('Error generating support ticket report:', error);
+    logger.error('Error generating support ticket report:', error);
     res.status(500).json({ message: 'Error generating support ticket report' });
   }
 });
@@ -576,7 +576,7 @@ router.get('/:reportType/export', verifyToken, isAdmin, async (req: Request, res
         return;
     }
   } catch (error) {
-    console.error('Error exporting report:', error);
+    logger.error('Error exporting report:', error);
     res.status(500).json({ message: 'Error exporting report' });
   }
 });

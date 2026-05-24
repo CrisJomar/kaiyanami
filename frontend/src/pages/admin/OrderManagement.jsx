@@ -27,7 +27,7 @@ const OrderManagement = () => {
           return;
         }
         
-        const response = await axios.get('http://localhost:5001/api/admin/orders', {
+        const response = await axios.get('/api/admin/orders', {
           headers: {
             Authorization: `Bearer ${token}`
           }
@@ -64,7 +64,7 @@ const OrderManagement = () => {
       }
       
       await axios.patch(
-        `http://localhost:5001/api/admin/orders/${orderId}/status`, 
+        `/api/admin/orders/${orderId}/status`, 
         { status: newStatus },
         {
           headers: {
@@ -97,7 +97,7 @@ const OrderManagement = () => {
       
       // Make API call to update both status and tracking info
       await axios.patch(
-        `http://localhost:5001/api/admin/orders/${currentOrderId}/ship`, 
+        `/api/admin/orders/${currentOrderId}/ship`, 
         { 
           trackingNumber,
           sendEmail: true // Tell backend to send notification email
@@ -149,7 +149,7 @@ const fetchUserAddressesForOrder = async (orderData) => {
     
     // Use the admin-specific endpoint that bypasses role checks
     const response = await axios.get(
-      `http://localhost:5001/api/users/admin-access/${orderData.userId}/addresses`, 
+      `/api/users/admin-access/${orderData.userId}/addresses`, 
       { headers: { Authorization: `Bearer ${token}` }}
     );
     
@@ -217,7 +217,7 @@ const toggleOrderDetails = async (orderId) => {
       const token = localStorage.getItem('token');
       
       // Get order details
-      const response = await axios.get(`http://localhost:5001/api/admin/orders/${orderId}`, {
+      const response = await axios.get(`/api/admin/orders/${orderId}`, {
         headers: {
           Authorization: `Bearer ${token}`
         }

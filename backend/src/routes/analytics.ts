@@ -1,12 +1,12 @@
+import { logger } from '../lib/logger';
 import express from 'express';
 import { auth, verifyToken, optionalAuth, isAdmin, authorize } from '../utils/middlewareHelpers';
 import { Request, Response } from 'express';
 import analyticsController from '../controllers/analyticsController';
 import asyncHandler from 'express-async-handler';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma';
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // Simple route that will definitely work - no dependencies
 router.get('/', (req: Request, res: Response) => {
@@ -32,7 +32,7 @@ router.get('/dashboard', (req: Request, res: Response) => {
         message: "Dashboard data retrieved successfully"
       });
     } catch (error) {
-      console.error("Dashboard error:", error);
+      logger.error("Dashboard error:", error);
       res.status(500).json({ error: "Error fetching dashboard data" });
     }
   };
@@ -64,7 +64,7 @@ router.get('/sales-over-time', (req: Request, res: Response) => {
 
       res.json(orders);
     } catch (error) {
-      console.error("Sales over time error:", error);
+      logger.error("Sales over time error:", error);
       res.status(500).json({ error: "Error fetching sales data" });
     }
   };
@@ -106,7 +106,7 @@ router.get('/top-products', (req: Request, res: Response) => {
       
       res.json(products);
     } catch (error) {
-      console.error("Top products error:", error);
+      logger.error("Top products error:", error);
       res.status(500).json({ error: "Error fetching top products" });
     }
   };
@@ -142,7 +142,7 @@ router.get('/revenue-summary', (req: Request, res: Response) => {
         weekly: weeklyRevenue._sum.total || 0
       });
     } catch (error) {
-      console.error("Revenue summary error:", error);
+      logger.error("Revenue summary error:", error);
       res.status(500).json({ error: "Error fetching revenue summary" });
     }
   };
@@ -170,7 +170,7 @@ router.get('/recent-orders', (req: Request, res: Response) => {
       
       res.json(recentOrders);
     } catch (error) {
-      console.error("Recent orders error:", error);
+      logger.error("Recent orders error:", error);
       res.status(500).json({ error: "Error fetching recent orders" });
     }
   };
@@ -197,7 +197,7 @@ router.get('/customer-analytics', (req: Request, res: Response) => {
         conversionRate: totalUsers > 0 ? (usersWithOrders / totalUsers * 100).toFixed(2) + '%' : '0%'
       });
     } catch (error) {
-      console.error("Customer analytics error:", error);
+      logger.error("Customer analytics error:", error);
       res.status(500).json({ error: "Error fetching customer analytics" });
     }
   };
@@ -222,7 +222,7 @@ router.get('/public/stats', asyncHandler(async (req: Request, res: Response): Pr
       }
     });
   } catch (error) {
-    console.error('Error fetching public stats:', error);
+    logger.error('Error fetching public stats:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch public stats'

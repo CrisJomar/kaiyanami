@@ -24,7 +24,7 @@ const SupportTicketDetail = () => {
           return;
         }
         
-        const response = await axios.get(`http://localhost:5001/api/support/${id}`, {
+        const response = await axios.get(`/api/support/${id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
@@ -67,7 +67,7 @@ const SupportTicketDetail = () => {
       const token = localStorage.getItem('token');
       
       const response = await axios.post(
-        `http://localhost:5001/api/support/${id}/messages`,
+        `/api/support/${id}/messages`,
         { message: newMessage },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -97,7 +97,7 @@ const SupportTicketDetail = () => {
       formData.append('file', file);
       
       await axios.post(
-        `http://localhost:5001/api/support/${id}/attachments`,
+        `/api/support/${id}/attachments`,
         formData,
         { 
           headers: { 
@@ -108,7 +108,7 @@ const SupportTicketDetail = () => {
       );
       
 
-      const response = await axios.get(`http://localhost:5001/api/support/${id}`, {
+      const response = await axios.get(`/api/support/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -360,7 +360,7 @@ const SupportTicketDetail = () => {
                     </p>
                   </div>
                   <a 
-                    href={`http://localhost:5001${attachment.fileUrl}`} 
+                    href={`${import.meta.env.VITE_API_URL ?? ""}${attachment.fileUrl}`} 
                     download={attachment.fileName}
                     className="text-blue-600 hover:text-blue-800"
                     target="_blank"

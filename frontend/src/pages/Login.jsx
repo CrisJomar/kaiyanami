@@ -58,7 +58,7 @@ const Login = () => {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = 'http://localhost:5001/api/auth/google';
+    window.location.href = `${import.meta.env.VITE_API_URL ?? 'http://localhost:5001'}/api/auth/google`;
   };
 
   return (

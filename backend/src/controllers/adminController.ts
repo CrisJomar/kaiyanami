@@ -1,8 +1,8 @@
+import { logger } from '../lib/logger';
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma';
 import bcrypt from 'bcrypt';
 
-const prisma = new PrismaClient();
 
 interface AdminDashboardStats {
   totalUsers: number;
@@ -70,7 +70,7 @@ const adminController = {
       
       res.json(stats);
     } catch (error) {
-      console.error('Error getting admin stats:', error);
+      logger.error('Error getting admin stats:', error);
       res.status(500).json({ message: 'Failed to get admin dashboard stats' });
     }
   },
@@ -93,7 +93,7 @@ const adminController = {
       
       res.json(users);
     } catch (error) {
-      console.error('Error fetching users:', error);
+      logger.error('Error fetching users:', error);
       res.status(500).json({ message: 'Error fetching users' });
     }
   },
@@ -130,7 +130,7 @@ const adminController = {
       
       res.json(user);
     } catch (error) {
-      console.error('Error fetching user:', error);
+      logger.error('Error fetching user:', error);
       res.status(500).json({ message: 'Error fetching user' });
     }
   },
@@ -173,7 +173,7 @@ const adminController = {
       
       res.status(201).json(userWithoutPassword);
     } catch (error) {
-      console.error('Error creating user:', error);
+      logger.error('Error creating user:', error);
       res.status(500).json({ message: 'Error creating user' });
     }
   },
@@ -217,7 +217,7 @@ const adminController = {
       
       res.json(userWithoutPassword);
     } catch (error) {
-      console.error('Error updating user:', error);
+      logger.error('Error updating user:', error);
       res.status(500).json({ message: 'Error updating user' });
     }
   },
@@ -294,7 +294,7 @@ const adminController = {
       
       res.json({ message: 'User deleted successfully' });
     } catch (error) {
-      console.error('Error deleting user:', error);
+      logger.error('Error deleting user:', error);
       res.status(500).json({ message: 'Error deleting user' });
     }
   },
@@ -307,7 +307,7 @@ const adminController = {
       });
       res.json(products);
     } catch (error) {
-      console.error('Error fetching products:', error);
+      logger.error('Error fetching products:', error);
       res.status(500).json({ message: 'Failed to fetch products' });
     }
   },
@@ -344,7 +344,7 @@ const adminController = {
       
       res.status(201).json(product);
     } catch (error) {
-      console.error('Error creating product:', error);
+      logger.error('Error creating product:', error);
       res.status(500).json({ 
         message: 'Server error', 
         error: String(error)
@@ -391,7 +391,7 @@ const adminController = {
       
       res.json(product);
     } catch (error) {
-      console.error('Error updating product:', error);
+      logger.error('Error updating product:', error);
       res.status(500).json({ message: 'Failed to update product' });
     }
   },
@@ -406,7 +406,7 @@ const adminController = {
       
       res.json({ message: 'Product deleted successfully' });
     } catch (error) {
-      console.error('Error deleting product:', error);
+      logger.error('Error deleting product:', error);
       res.status(500).json({ message: 'Failed to delete product' });
     }
   },
@@ -429,7 +429,7 @@ const adminController = {
       
       res.json(orders);
     } catch (error) {
-      console.error('Error fetching orders:', error);
+      logger.error('Error fetching orders:', error);
       res.status(500).json({ message: 'Failed to fetch orders' });
     }
   },
@@ -446,7 +446,7 @@ const adminController = {
       
       res.json(order);
     } catch (error) {
-      console.error('Error updating order status:', error);
+      logger.error('Error updating order status:', error);
       res.status(500).json({ message: 'Failed to update order status' });
     }
   }
