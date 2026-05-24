@@ -1,19 +1,13 @@
 import { logger } from '../lib/logger';
 import express, { Request, Response, RequestHandler } from "express";
-import { PrismaClient, Prisma } from '@prisma/client';
+import prisma from '../lib/prisma';
+import { Prisma } from '@prisma/client';
 import { verifyToken, optionalAuth } from "../utils/middlewareHelpers";
 import { sendOrderConfirmation } from '../utils/emailService'; // Adjust import path as needed
 
 const router = express.Router();
 
-// Define custom request interface
-interface AuthRequest extends Request {
-  user?: {
-    id: string;
-    email: string;
-    role?: string;
-  };
-}
+// req.user is typed globally via Express.User in authMiddleware.ts
 
 // Define order creation types for better type safety
 interface OrderItem {
@@ -94,7 +88,7 @@ router.get('/public/:orderId', async (req: Request, res: Response) => {
 });
 
 // USER ORDER ENDPOINTS
-router.get('/', verifyToken, async (req: AuthRequest, res: Response) => {
+router.get('/', verifyToken, async (req: Request, res: Response) => {
   try {
     const user = req.user;
     
@@ -117,7 +111,7 @@ router.get('/', verifyToken, async (req: AuthRequest, res: Response) => {
   }
 });
 
-router.get('/:id', verifyToken, async (req: AuthRequest, res: Response) => {
+router.get('/:id', verifyToken, async (req: Request, res: Response) => {
   try {
     const user = req.user;
     
@@ -150,7 +144,7 @@ router.get('/:id', verifyToken, async (req: AuthRequest, res: Response) => {
 });
 
 // ORDER CREATION ENDPOINT 
-router.post('/create-order', optionalAuth, async (req: AuthRequest, res: Response) => {
+router.post('/create-order', optionalAuth, async (req: Request, res: Response) => {
   try {
     const user = req.user;
     const { customer, shipping, payment, items } = req.body as OrderCreationBody;
@@ -200,7 +194,7 @@ router.post('/create-order', optionalAuth, async (req: AuthRequest, res: Respons
         select: { firstName: true, lastName: true, email: true }
       });
       
-      logger.info(" user name:", userDetails?.firstName, userDetails?.lastName);
+      logger.info("Resolved user name", { firstName: userDetails?.firstName, lastName: userDetails?.lastName });
       
       // Create shipping address
       const shippingAddress = await prisma.address.create({
@@ -313,7 +307,7 @@ router.post('/create-order', optionalAuth, async (req: AuthRequest, res: Respons
 });
 
 // ADMIN ROUTES
-router.patch('/:id/status', verifyToken, async (req: AuthRequest, res: Response) => {
+router.patch('/:id/status', verifyToken, async (req: Request, res: Response) => {
   try {
     const user = req.user;
     const { status } = req.body;
@@ -334,7 +328,7 @@ router.patch('/:id/status', verifyToken, async (req: AuthRequest, res: Response)
   }
 });
 
-router.patch('/:id/payment', verifyToken, async (req: AuthRequest, res: Response) => {
+router.patch('/:id/payment', verifyToken, async (req: Request, res: Response) => {
   try {
     const { paymentStatus } = req.body;
     

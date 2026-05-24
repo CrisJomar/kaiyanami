@@ -2,14 +2,7 @@ import { logger } from '../lib/logger';
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
 
-interface AuthenticatedRequest extends Request {
-  user?: {
-    id: string;
-    email: string;
-    role?: string;
-    [key: string]: any;
-  };
-}
+// Express.User is augmented globally in authMiddleware.ts — use req.user directly.
 
 
 // Get the current user's cart

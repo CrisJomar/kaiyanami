@@ -218,7 +218,7 @@ export const getOrder = async (req: Request, res: Response) => {
 
     // Security check: For user orders, verify ownership
     if (order.userId && user && order.userId !== user.id) {
-      logger.info("Unauthorized access attempt:", user.id, "trying to access order for", order.userId);
+      logger.info("Unauthorized access attempt", { userId: user.id, orderId: order.userId });
       return res.status(403).json({ error: 'Unauthorized access to this order' });
     }
     

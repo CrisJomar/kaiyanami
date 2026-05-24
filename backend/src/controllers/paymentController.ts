@@ -397,7 +397,7 @@ const paymentController = {
       }
 
       if (order.userId && user && order.userId !== user.id) {
-        logger.info("Unauthorized access attempt:", user.id, "trying to access order for", order.userId);
+        logger.info("Unauthorized access attempt", { userId: user.id, orderId: order.userId });
         return res.status(403).json({ error: 'Unauthorized access to this order' });
       }
       
@@ -417,8 +417,8 @@ const paymentController = {
     try {
       const { orderId, email, items } = req.body;
       
-      logger.info("Sending confirmation email for order:", orderId, "to:", email);
-      logger.info("Items provided:", items);
+      logger.info("Sending confirmation email", { orderId, email });
+      logger.info("Items provided", { count: items?.length });
       
       if (!email) {
         return res.status(400).json({ message: 'Email address is required' });

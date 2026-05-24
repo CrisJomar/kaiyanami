@@ -1,6 +1,7 @@
 import { logger } from '../lib/logger';
 import { Request, Response } from 'express';
-import { PrismaClient, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import prisma from '../lib/prisma';
 
 // Extend Express Request type to include user property
 // Define our own User interface
@@ -343,7 +344,7 @@ export class ProductController {
         }
       }
       if (hasSizes && Array.isArray(sizes)) {
-        logger.info('Processing sizes:', sizes.length, 'items');
+        logger.info('Processing sizes', { count: sizes.length });
         
         // Delete existing sizes
         const deletedSizes = await prisma.productSize.deleteMany({
@@ -1167,7 +1168,7 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
         if (updateData.hasSizes) {
           // If sizes were provided, update them
           if (sizesProvided) {
-            logger.info('Processing new sizes:', sizes.length, 'items');
+            logger.info('Processing new sizes', { count: sizes.length });
             
             // Delete existing sizes
             const deletedSizes = await tx.productSize.deleteMany({

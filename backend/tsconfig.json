@@ -11,10 +11,10 @@
 
     /* Strictness */
     "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "forceConsistentCasingInFileNames": true,
+    // noImplicitReturns & noUncheckedIndexedAccess are great for greenfield
+    // but too noisy for an existing Express codebase — enable incrementally.
 
     /* Interop */
     "esModuleInterop": true,

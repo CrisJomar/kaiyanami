@@ -87,10 +87,8 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use("/uploads", express.static(path.resolve("uploads")));
 
 // ── Health check ──────────────────────────────────────────────────────────────
-app.get("/", (_req, res) => res.send("Backend is live 🚀"));
-app.get("/api/health", (_req, res) =>
-  res.json({ status: "ok", uptime: process.uptime() })
-);
+app.get("/", (_req, res) => { res.send("Backend is live 🚀"); });
+app.get("/api/health", (_req, res) => { res.json({ status: "ok", uptime: process.uptime() }); });
 
 // ── API routes ────────────────────────────────────────────────────────────────
 app.use("/api/auth", authRoutes);

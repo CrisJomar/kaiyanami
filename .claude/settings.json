@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3)",
+      "Bash(sed -i '' 's|import prisma from '\\\\''../lib/prisma'\\\\'';|import prisma from '\\\\''../lib/prisma'\\\\'';\\\\nimport { Prisma } from '\\\\''@prisma/client'\\\\'';|' '/Users/cris/Desktop/kaiyanami 2/backend/src/routes/orders.ts')",
+      "Bash(sed -i '' 's/logger\\\\.info\\(\" user name:\", userDetails?\\\\.firstName, userDetails?\\\\.lastName\\);/logger.info\\(\"Resolved user name\", { firstName: userDetails?.firstName, lastName: userDetails?.lastName }\\);/' '/Users/cris/Desktop/kaiyanami 2/backend/src/routes/orders.ts')",
+      "Bash(timeout 12 npm run dev)",
+      "Bash(node -e ' *)",
+      "Bash(npx ts-node *)",
+      "Bash(kill %1)",
+      "Bash(grep -v \"Use \\\\`node\")"
+    ]
+  }
+}

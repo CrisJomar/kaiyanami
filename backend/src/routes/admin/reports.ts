@@ -1,4 +1,4 @@
-import { logger } from '../lib/logger';
+import { logger } from '../../lib/logger';
 import { Router, Request, Response, NextFunction } from 'express';
 import prisma from '../../lib/prisma';
 import { verifyToken, isAdmin } from '../../utils/middlewareHelpers';

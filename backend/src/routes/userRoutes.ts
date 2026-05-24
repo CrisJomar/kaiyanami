@@ -4,14 +4,7 @@ import prisma from '../lib/prisma';
 import { Request, Response } from 'express';
 import { auth, verifyToken, optionalAuth, isAdmin, authorize } from '../utils/middlewareHelpers';
 
-// Define AuthRequest interface
-interface AuthRequest extends Request {
-  user?: {
-    id: string;
-    email: string;
-    role?: string;
-  };
-}
+// req.user is typed globally via Express.User in authMiddleware.ts
 
 const router = express.Router();
 
@@ -159,7 +152,7 @@ router.get('/admin-access/:userId/addresses', verifyToken, async (req: Request, 
 router.get('/profile', verifyToken, async (req: Request, res: Response) => {
   try {
     // Safely cast req to AuthRequest
-    const user = (req as AuthRequest).user;
+    const user = (req as any).user;
     
     if (!user) {
       res.status(401).json({ message: "Not authenticated" });
